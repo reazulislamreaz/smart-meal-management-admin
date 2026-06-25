@@ -1517,18 +1517,18 @@ function SubscriptionForm({ edit = false }: { edit?: boolean }) {
   const [description, setDescription] = useState(existing?.description ?? "");
   const [featureDraft, setFeatureDraft] = useState("");
   const [planFeatures, setPlanFeatures] = useState(existing?.features ?? []);
-  const addFeature = () => {
-    const value = featureDraft.trim();
-    if (
-      !value ||
-      planFeatures.some(
-        (feature) => feature.toLowerCase() === value.toLowerCase(),
-      )
-    )
-      return;
-    setPlanFeatures((current) => [...current, value]);
-    setFeatureDraft("");
-  };
+  // const addFeature = () => {
+  //   const value = featureDraft.trim();
+  //   if (
+  //     !value ||
+  //     planFeatures.some(
+  //       (feature) => feature.toLowerCase() === value.toLowerCase(),
+  //     )
+  //   )
+  //     return;
+  //   setPlanFeatures((current) => [...current, value]);
+  //   setFeatureDraft("");
+  // };
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     const normalizedPrice = price.replace(/^\$/, "").trim();
