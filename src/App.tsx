@@ -1,6 +1,9 @@
 import {
+  createContext,
   useEffect,
+  useContext,
   useMemo,
+  useRef,
   useState,
   type Dispatch,
   type FormEvent,
@@ -37,9 +40,110 @@ import {
   Routes,
   useLocation,
   useNavigate,
+  useParams,
   useSearchParams,
 } from 'react-router-dom'
 import notificationArt from '@/assets/hero.png'
+
+type Profile = {
+  name: string
+  email: string
+  phone: string
+  address: string
+  role: string
+  memberSince: string
+}
+
+type Preferences = {
+  language: string
+  timezone: string
+  notifications: boolean[]
+}
+
+type AppData = {
+  profile: Profile
+  setProfile: Dispatch<SetStateAction<Profile>>
+  preferences: Preferences
+  setPreferences: Dispatch<SetStateAction<Preferences>>
+  privacy: string
+  setPrivacy: Dispatch<SetStateAction<string>>
+  about: string
+  setAbout: Dispatch<SetStateAction<string>>
+  contact: typeof initialContactDetails
+  setContact: Dispatch<SetStateAction<typeof initialContactDetails>>
+}
+
+const initialProfile: Profile = {
+  name: 'Bashar Islam',
+  email: 'bashar@gmail.com',
+  phone: '1234567890',
+  address: 'Dhaka, Bangladesh',
+  role: 'Admin',
+  memberSince: 'January',
+}
+
+const initialPreferences: Preferences = {
+  language: 'English (UK)',
+  timezone: 'GMT +06:00',
+  notifications: [true, true, false, true],
+}
+
+const initialContactDetails = {
+  title: 'Get in touch with us',
+  email: 'hello@sizzl.com',
+  phone: '+1 123 456 789',
+  address: 'Dhaka, Bangladesh',
+}
+
+const initialPageCopy = {
+  privacy: {
+    title: 'Privacy Policy',
+    text: 'At Sizzl, we value your privacy and are committed to protecting your personal information. This policy explains how we collect, use, store, and safeguard information when you use our meal management services. We only collect information necessary to provide a safe, personalized experience, process subscriptions, and improve our products. Your information is never sold to third parties. We use appropriate security measures and retain data only for as long as required to deliver our services or meet legal obligations.',
+  },
+  about: {
+    title: 'About Us',
+    text: 'Sizzl makes everyday meal planning simple, personal, and enjoyable. Our platform helps people discover meals, organize food choices, and manage subscriptions in one clear place. We believe healthy decisions should fit naturally into daily life, so we combine practical tools with thoughtfully selected recipes and reliable nutritional information. Our team is focused on building a friendly service that saves time and supports better eating habits.',
+  },
+}
+
+const AppDataContext = createContext<AppData | null>(null)
+
+function useAppData() {
+  const value = useContext(AppDataContext)
+  if (!value) throw new Error('App data is unavailable')
+  return value
+}
+
+function useStoredState<T>(key: string, initialValue: T) {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      const stored = window.localStorage.getItem(key)
+      return stored ? JSON.parse(stored) as T : initialValue
+    } catch {
+      return initialValue
+    }
+  })
+
+  useEffect(() => {
+    window.localStorage.setItem(key, JSON.stringify(value))
+  }, [key, value])
+
+  return [value, setValue] as const
+}
+
+function AppDataProvider({ children }: { children: ReactNode }) {
+  const [profile, setProfile] = useStoredState('sizzl-profile', initialProfile)
+  const [preferences, setPreferences] = useStoredState('sizzl-preferences', initialPreferences)
+  const [privacy, setPrivacy] = useStoredState('sizzl-privacy', initialPageCopy.privacy.text)
+  const [about, setAbout] = useStoredState('sizzl-about', initialPageCopy.about.text)
+  const [contact, setContact] = useStoredState('sizzl-contact', initialContactDetails)
+  const value = useMemo(() => ({
+    profile, setProfile, preferences, setPreferences,
+    privacy, setPrivacy, about, setAbout, contact, setContact,
+  }), [about, contact, preferences, privacy, profile, setAbout, setContact, setPreferences, setPrivacy, setProfile])
+
+  return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>
+}
 
 const avatars = [
   'https://i.pravatar.cc/96?img=12',
@@ -61,6 +165,7 @@ const nav = [
 ]
 
 function Shell({ children }: { children: ReactNode }) {
+  const { profile } = useAppData()
   const location = useLocation()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -144,19 +249,38 @@ function Shell({ children }: { children: ReactNode }) {
           >
             <Menu />
           </button>
-    
+          <label className="searchbox">
+            <Search />
+            <input
+              aria-label="Search"
+              placeholder="Search name"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') clearSearch()
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  const next = new URLSearchParams(searchParams)
+                  if (search.trim()) next.set('q', search.trim())
+                  else next.delete('q')
+                  setSearchParams(next, { replace: true })
+                }
+              }}
+            />
+            {search && <button type="button" className="search-clear" aria-label="Clear search" onClick={clearSearch}><X /></button>}
+          </label>
           <div className="top-actions">
-            <button className="icon-button" onClick={() => setNotificationsOpen((v) => !v)}><Bell /></button>
-            <button className="profile-button" onClick={() => setProfileOpen((v) => !v)}>
+            <button className="icon-button" aria-label="Notifications" aria-expanded={notificationsOpen} onClick={() => { setNotificationsOpen((v) => !v); setProfileOpen(false) }}><Bell /></button>
+            <button className="profile-button" aria-expanded={profileOpen} onClick={() => { setProfileOpen((v) => !v); setNotificationsOpen(false) }}>
               <img src={avatars[0]} alt="" />
-              <strong>Bashar Islam</strong>
+              <strong>{profile.name}</strong>
               <ChevronDown />
             </button>
           </div>
           {profileOpen && (
             <div className="profile-popover">
-              <strong>Bashar Islam</strong>
-              <span>bashar@gmail.com</span>
+              <strong>{profile.name}</strong>
+              <span>{profile.email}</span>
               <button onClick={logout}><LogOut /> Logout</button>
             </div>
           )}
@@ -312,20 +436,30 @@ function UserTable({ earnings = false }: { earnings?: boolean }) {
   const query = (searchParams.get('q') ?? '').toLowerCase()
   const [page, setPage] = useState(1)
   const [ascending, setAscending] = useState(false)
+  const [subscription, setSubscription] = useState<'All' | 'Annual' | 'Monthly'>('All')
   const pageSize = 4
   const filteredUsers = useMemo(() => users
     .filter((user) => user.join(' ').toLowerCase().includes(query))
-    .sort((a, b) => ascending ? a[5].localeCompare(b[5]) : b[5].localeCompare(a[5])), [ascending, query])
+    .filter((user) => {
+      if (subscription === 'All') return true
+      const userSubscription = Number(user[0]) % 2 ? 'Annual' : 'Monthly'
+      return userSubscription === subscription
+    })
+    .sort((a, b) => ascending ? a[5].localeCompare(b[5]) : b[5].localeCompare(a[5])), [ascending, query, subscription])
   const pageCount = Math.max(1, Math.ceil(filteredUsers.length / pageSize))
   const visibleUsers = filteredUsers.slice((page - 1) * pageSize, page * pageSize)
 
-  useEffect(() => setPage(1), [query])
+  useEffect(() => setPage(1), [query, subscription])
+
+  const cycleSubscription = () => {
+    setSubscription((value) => value === 'All' ? 'Annual' : value === 'Annual' ? 'Monthly' : 'All')
+  }
 
   return (
     <section className="table-panel">
       <div className="table-toolbar">
         <h3>{earnings ? 'All Earning list' : 'All Users list'}</h3>
-        <div className="filter-pills"><button type="button">{earnings ? 'User Name' : 'Search Name'} <Search /></button><button type="button" onClick={() => setAscending((value) => !value)}>Joining Date <ChevronDown /></button><button type="button">Subscription <ChevronDown /></button><button type="button" onClick={() => setAscending((value) => !value)}>Recent Created <ChevronDown /></button></div>
+        <div className="filter-pills"><button type="button" onClick={() => document.querySelector<HTMLInputElement>('input[aria-label="Search"]')?.focus()}>{earnings ? 'User Name' : 'Search Name'} <Search /></button><button type="button" onClick={() => setAscending((value) => !value)}>Joining Date <ChevronDown /></button><button type="button" onClick={cycleSubscription}>{subscription === 'All' ? 'Subscription' : subscription} <ChevronDown /></button><button type="button" onClick={() => setAscending(false)}>Recent Created <ChevronDown /></button></div>
       </div>
       <table>
         <thead><tr>{(earnings ? ['Sl','User Image','Email','Subscription Type','Price','Expire Date','Action'] : ['Sl','User Name','Email','Phone Number','Address','Joining Date','Action']).map((h) => <th key={h}>{h}</th>)}</tr></thead>
@@ -338,7 +472,7 @@ function UserTable({ earnings = false }: { earnings?: boolean }) {
               <td>{earnings ? (i % 2 ? 'Monthly' : 'Annual') : user[3]}</td>
               <td>{earnings ? `$${[10.99, 29.99, 49.99][i % 3]}` : user[4]}</td>
               <td>{user[5]}<br /><small>02:20PM</small></td>
-              <td><Link className="row-action" to={earnings ? '/earnings/1' : '/users/1'}><Eye /></Link></td>
+              <td><Link aria-label={`View ${user[1]}`} className="row-action" to={earnings ? `/earnings/${user[0]}` : `/users/${user[0]}`}><Eye /></Link></td>
             </tr>
           ))}
           {!visibleUsers.length && <tr><td colSpan={7}><EmptyState /></td></tr>}
@@ -360,12 +494,14 @@ function Users() {
 }
 
 function DetailCard({ earnings = false }: { earnings?: boolean }) {
+  const { id } = useParams()
+  const user = users.find((item) => item[0] === id) ?? users[0]
   const [blocked, setBlocked] = useState(false)
   return (
     <div className="details-wrap">
       <Link to={earnings ? '/earnings' : '/users'} className="back"><ArrowLeft /> User Details</Link>
       <div className="identity-card">
-        <div className="identity"><img src={avatars[earnings ? 3 : 0]} alt="" /><div><strong>{earnings ? 'Alex T' : 'Bashar Islam'}</strong><span>{earnings ? '' : 'Member'}</span></div></div>
+        <div className="identity"><img src={avatars[(Number(user[0]) - 1) % avatars.length]} alt="" /><div><strong>{user[1]}</strong><span>{earnings ? '' : 'Member'}</span></div></div>
         {!earnings && <button className="danger-pill" onClick={() => setBlocked((value) => !value)}>{blocked ? 'Unblock User' : 'Block User'}</button>}
       </div>
       {earnings ? (
@@ -385,9 +521,9 @@ function DetailCard({ earnings = false }: { earnings?: boolean }) {
           <section className="info-card">
             <h3>User Information</h3>
             <div className="info-grid">
-              <div><span>Email</span><strong>BasharIslam123@gmail.com</strong></div>
-              <div><span>Phone number</span><strong>1234567890</strong></div>
-              <div><span>Joining Date</span><strong>15 Feb 2025</strong></div>
+              <div><span>Email</span><strong>{user[2]}</strong></div>
+              <div><span>Phone number</span><strong>{user[3]}</strong></div>
+              <div><span>Joining Date</span><strong>{user[5]}</strong></div>
               <div><span>Current plan</span><strong className="approved">Annual</strong></div>
             </div>
           </section>
@@ -437,7 +573,7 @@ function MealForm({
 function Meals() {
   const [searchParams, setSearchParams] = useSearchParams()
   const query = searchParams.get('q') ?? ''
-  const [mealRows, setMealRows] = useState(() => meals.map((meal) => [...meal]))
+  const [mealRows, setMealRows] = useStoredState('sizzl-meals', meals.map((meal) => [...meal]))
   const [category, setCategory] = useState('All')
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [draft, setDraft] = useState<MealDraft>({ name: '', type: 'Dinner', duration: '', price: '' })
@@ -513,8 +649,8 @@ function Meals() {
 }
 
 function MealOptions() {
-  const [diet, setDiet] = useState(['Vegetarian','Vegan','Halal','Kosher','Gluten-free','Dairy-free','Nut-free','Pescatarian','High-protein'])
-  const [cuisine, setCuisine] = useState(['Italian','Mexican','Asian','Mediterranean','American','Indian','Middle Eastern','British'])
+  const [diet, setDiet] = useStoredState('sizzl-diets', ['Vegetarian','Vegan','Halal','Kosher','Gluten-free','Dairy-free','Nut-free','Pescatarian','High-protein'])
+  const [cuisine, setCuisine] = useStoredState('sizzl-cuisines', ['Italian','Mexican','Asian','Mediterranean','American','Indian','Middle Eastern','British'])
   const addOption = (setter: Dispatch<SetStateAction<string[]>>) => {
     const value = window.prompt('Enter option name')?.trim()
     if (value) setter((current) => current.some((item) => item.toLowerCase() === value.toLowerCase()) ? current : [...current, value])
@@ -543,30 +679,43 @@ function SubscriptionOverview() {
 }
 
 const features = ['Unlimited meal plans','Nutrition tracking','Advanced analytics','Priority support']
-function PlanCard({ premium = false, onDelete }: { premium?: boolean; onDelete: () => void }) {
+type SubscriptionPlan = {
+  id: string
+  name: string
+  description: string
+  price: string
+  duration: 'monthly' | 'annual'
+  features: string[]
+}
+
+const initialPlans: SubscriptionPlan[] = [
+  { id: 'basic', name: 'Basic Plan', description: 'Everything you need to get started', price: '9.99', duration: 'monthly', features },
+  { id: 'premium', name: 'Premium Plan', description: 'Best for growing health programs', price: '29.99', duration: 'monthly', features },
+]
+
+function PlanCard({ plan, onDelete }: { plan: SubscriptionPlan; onDelete: () => void }) {
   return (
     <div className="plan-card">
-      <div className="plan-head"><span>{premium ? 'Premium Plan' : 'Basic Plan'}</span><p>{premium ? 'Best for growing health programs' : 'Everything you need to get started'}</p></div>
+      <div className="plan-head"><span>{plan.name}</span><p>{plan.description}</p></div>
       <div className="plan-body">
-        <strong>${premium ? '29.99' : '9.99'}<small>/Month</small></strong>
-        <p>Every Monthly Billing</p>
-        <div className="plan-actions"><Link to="/subscription/edit">Edit</Link><button className="remove" onClick={onDelete}>Delete</button></div>
+        <strong>${plan.price}<small>/{plan.duration === 'annual' ? 'Year' : 'Month'}</small></strong>
+        <p>Every {plan.duration === 'annual' ? 'Annual' : 'Monthly'} Billing</p>
+        <div className="plan-actions"><Link to={`/subscription/edit/${plan.id}`}>Edit</Link><button className="remove" onClick={onDelete}>Delete</button></div>
         <h4>Features</h4>
-        <ul>{features.map((f) => <li key={f}>✓ {f}</li>)}</ul>
+        <ul>{plan.features.map((f) => <li key={f}>✓ {f}</li>)}</ul>
       </div>
     </div>
   )
 }
 
 function SubscriptionPlans() {
-  const [plans, setPlans] = useState(['basic', 'premium'])
+  const [plans, setPlans] = useStoredState('sizzl-plans', initialPlans)
   return (
     <>
       <PageHeading title="Subscription" action={<Link to="/subscription/create" className="dark-button">Create Subscription</Link>} />
       <p className="subtitle">Manage your Subscription.</p>
       <div className="plans-grid">
-        {plans.includes('basic') && <PlanCard onDelete={() => setPlans((current) => current.filter((plan) => plan !== 'basic'))} />}
-        {plans.includes('premium') && <PlanCard premium onDelete={() => setPlans((current) => current.filter((plan) => plan !== 'premium'))} />}
+        {plans.map((plan) => <PlanCard key={plan.id} plan={plan} onDelete={() => setPlans((current) => current.filter((item) => item.id !== plan.id))} />)}
         {!plans.length && <EmptyState label="No subscription plans" />}
       </div>
     </>
@@ -575,8 +724,36 @@ function SubscriptionPlans() {
 
 function SubscriptionForm({ edit = false }: { edit?: boolean }) {
   const navigate = useNavigate()
+  const { id } = useParams()
+  const [plans, setPlans] = useStoredState('sizzl-plans', initialPlans)
+  const existing = edit ? plans.find((plan) => plan.id === id) ?? plans[0] : undefined
+  const [name, setName] = useState(existing?.name ?? '')
+  const [price, setPrice] = useState(existing?.price ?? '')
+  const [duration, setDuration] = useState<'monthly' | 'annual'>(existing?.duration ?? 'monthly')
+  const [description, setDescription] = useState(existing?.description ?? '')
+  const [featureDraft, setFeatureDraft] = useState('')
+  const [planFeatures, setPlanFeatures] = useState(existing?.features ?? [])
+  const addFeature = () => {
+    const value = featureDraft.trim()
+    if (!value || planFeatures.some((feature) => feature.toLowerCase() === value.toLowerCase())) return
+    setPlanFeatures((current) => [...current, value])
+    setFeatureDraft('')
+  }
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
+    const normalizedPrice = price.replace(/^\$/, '').trim()
+    if (!/^\d+(\.\d{1,2})?$/.test(normalizedPrice)) return
+    const plan: SubscriptionPlan = {
+      id: existing?.id ?? `${Date.now()}`,
+      name: name.trim(),
+      price: normalizedPrice,
+      duration,
+      description: description.trim(),
+      features: planFeatures,
+    }
+    setPlans((current) => existing
+      ? current.map((item) => item.id === existing.id ? plan : item)
+      : [...current, plan])
     alert(edit ? 'Subscription updated successfully.' : 'Subscription created successfully.')
     navigate('/subscription/plans')
   }
@@ -584,15 +761,16 @@ function SubscriptionForm({ edit = false }: { edit?: boolean }) {
     <div className="narrow-page">
       <Link to="/subscription/plans" className="back"><ArrowLeft /> {edit ? 'Edit Subscription' : 'Create Subscription'}</Link>
       <form className="form-card" onSubmit={handleSubmit}>
-        <h3>Create Subscription</h3>
-        <label>Subscription Plan Name<input defaultValue={edit ? 'Premium Plan' : ''} placeholder="Subscription Plan Name" required /></label>
-        <label>Subscription Price<input defaultValue={edit ? '29.99' : ''} placeholder="29.99" required /></label>
-        <label>Duration<select required><option value="monthly">Monthly</option><option value="annual">Annual</option></select></label>
-        <label className="feature-label">Features<select><option>Monthly</option></select><button type="button" onClick={() => alert('Feature added successfully.')}>Add</button></label>
-        <input placeholder="Nutrition tracker" />
-        <input placeholder="Advanced analytics" />
-        <input placeholder="Description" />
-        <button type="button" className="outline-button" onClick={() => alert('Feature input added.')}>+ Add More</button>
+        <h3>{edit ? 'Edit Subscription' : 'Create Subscription'}</h3>
+        <label>Subscription Plan Name<input value={name} onChange={(event) => setName(event.target.value)} placeholder="Subscription Plan Name" required /></label>
+        <label>Subscription Price<input value={price} onChange={(event) => setPrice(event.target.value)} inputMode="decimal" placeholder="29.99" required /></label>
+        <label>Duration<select value={duration} onChange={(event) => setDuration(event.target.value as 'monthly' | 'annual')} required><option value="monthly">Monthly</option><option value="annual">Annual</option></select></label>
+        <label className="feature-label">Features<select value={featureDraft} onChange={(event) => setFeatureDraft(event.target.value)}><option value="">Select feature</option>{features.map((feature) => <option key={feature}>{feature}</option>)}</select><button type="button" onClick={addFeature}>Add</button></label>
+        <input value={planFeatures[0] ?? ''} onChange={(event) => setPlanFeatures((current) => [event.target.value, ...current.slice(1)])} placeholder="Nutrition tracker" />
+        <input value={planFeatures[1] ?? ''} onChange={(event) => setPlanFeatures((current) => [current[0] ?? '', event.target.value, ...current.slice(2)])} placeholder="Advanced analytics" />
+        {planFeatures.slice(2).map((feature, index) => <input key={index + 2} value={feature} onChange={(event) => setPlanFeatures((current) => current.map((item, itemIndex) => itemIndex === index + 2 ? event.target.value : item))} placeholder="Feature" />)}
+        <input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Description" />
+        <button type="button" className="outline-button" onClick={() => setPlanFeatures((current) => [...current, ''])}>+ Add More</button>
         <button type="submit" className="dark-button wide">{edit ? 'Update' : 'Create'}</button>
       </form>
     </div>
@@ -632,18 +810,43 @@ function SettingsLayout({ children }: { children: ReactNode }) {
 }
 
 function GeneralSettings() {
+  const { profile } = useAppData()
   return (
     <SettingsLayout>
-      <section className="identity-card settings-identity"><div className="identity"><img src={avatars[0]} alt="" /><div><strong>Bashar Islam</strong><span>Admin</span></div></div><Link to="/settings/edit-profile" className="dark-button">Edit Profile</Link></section>
-      <section className="info-card"><h3>Personal information</h3><div className="info-grid three"><div><span>Name</span><strong>Bashar Islam</strong></div><div><span>Email</span><strong>bashar@gmail.com</strong></div><div><span>Phone Number</span><strong>1234567890</strong></div><div><span>Role</span><strong>Admin</strong></div><div><span>Member Since</span><strong>January</strong></div><div><span>Address</span><strong>Dhaka</strong></div></div></section>
+      <section className="identity-card settings-identity"><div className="identity"><img src={avatars[0]} alt="" /><div><strong>{profile.name}</strong><span>{profile.role}</span></div></div><Link to="/settings/edit-profile" className="dark-button">Edit Profile</Link></section>
+      <section className="info-card"><h3>Personal information</h3><div className="info-grid three"><div><span>Name</span><strong>{profile.name}</strong></div><div><span>Email</span><strong>{profile.email}</strong></div><div><span>Phone Number</span><strong>{profile.phone}</strong></div><div><span>Role</span><strong>{profile.role}</strong></div><div><span>Member Since</span><strong>{profile.memberSince}</strong></div><div><span>Address</span><strong>{profile.address}</strong></div></div></section>
     </SettingsLayout>
   )
 }
 
 function BasicSettingsForm({ type }: { type: 'profile' | 'password' | 'language' }) {
   const navigate = useNavigate()
+  const { profile, setProfile, preferences, setPreferences } = useAppData()
+  const [profileDraft, setProfileDraft] = useState(profile)
+  const [language, setLanguage] = useState(preferences.language)
+  const [timezone, setTimezone] = useState(preferences.timezone)
+  const [passwords, setPasswords] = useState({ current: '', next: '', confirm: '' })
+  const [error, setError] = useState('')
+
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
+    setError('')
+    if (type === 'profile') {
+      setProfile(profileDraft)
+    }
+    if (type === 'language') {
+      setPreferences((current) => ({ ...current, language, timezone }))
+    }
+    if (type === 'password') {
+      if (passwords.next.length < 8) {
+        setError('New password must be at least 8 characters.')
+        return
+      }
+      if (passwords.next !== passwords.confirm) {
+        setError('New passwords do not match.')
+        return
+      }
+    }
     alert('Changes saved successfully.')
     navigate('/settings')
   }
@@ -651,57 +854,71 @@ function BasicSettingsForm({ type }: { type: 'profile' | 'password' | 'language'
     <SettingsLayout>
       <form className="form-card settings-form" onSubmit={handleSubmit}>
         <h3>{type === 'profile' ? 'Edit Profile' : type === 'password' ? 'Change Password' : 'Change Language'}</h3>
-        {type === 'profile' && <><label>Full Name<input defaultValue="Bashar Islam" required /></label><label>Email<input defaultValue="bashar@gmail.com" required /></label><label>Phone<input defaultValue="1234567890" required /></label><label>Address<input defaultValue="Dhaka, Bangladesh" required /></label></>}
-        {type === 'password' && <><label>Current Password<input type="password" placeholder="••••••••" required /></label><label>New Password<input type="password" placeholder="••••••••" required /></label><label>Confirm Password<input type="password" placeholder="••••••••" required /></label></>}
-        {type === 'language' && <><label>Change Language<select required><option value="English (UK)">English (UK)</option></select></label><label>Time Zone<select required><option value="GMT +06:00">GMT +06:00</option></select></label></>}
+        {type === 'profile' && <><label>Full Name<input value={profileDraft.name} onChange={(event) => setProfileDraft((current) => ({ ...current, name: event.target.value }))} required /></label><label>Email<input type="email" value={profileDraft.email} onChange={(event) => setProfileDraft((current) => ({ ...current, email: event.target.value }))} required /></label><label>Phone<input value={profileDraft.phone} onChange={(event) => setProfileDraft((current) => ({ ...current, phone: event.target.value }))} required /></label><label>Address<input value={profileDraft.address} onChange={(event) => setProfileDraft((current) => ({ ...current, address: event.target.value }))} required /></label></>}
+        {type === 'password' && <><label>Current Password<input type="password" value={passwords.current} onChange={(event) => setPasswords((current) => ({ ...current, current: event.target.value }))} placeholder="••••••••" required /></label><label>New Password<input type="password" value={passwords.next} onChange={(event) => setPasswords((current) => ({ ...current, next: event.target.value }))} placeholder="••••••••" required /></label><label>Confirm Password<input type="password" value={passwords.confirm} onChange={(event) => setPasswords((current) => ({ ...current, confirm: event.target.value }))} placeholder="••••••••" required /></label></>}
+        {type === 'language' && <><label>Change Language<select value={language} onChange={(event) => setLanguage(event.target.value)} required><option>English (UK)</option><option>English (US)</option><option>বাংলা</option></select></label><label>Time Zone<select value={timezone} onChange={(event) => setTimezone(event.target.value)} required><option>GMT +06:00</option><option>GMT +00:00</option><option>GMT -05:00</option></select></label></>}
+        {error && <p className="form-message error" role="alert">{error}</p>}
         <button type="submit" className="dark-button wide">{type === 'language' ? 'Save Setting' : 'Save Changes'}</button>
       </form>
     </SettingsLayout>
   )
 }
 
-function Toggle({ on: initialOn = true }: { on?: boolean }) {
-  const [on, setOn] = useState(initialOn)
-  return <button type="button" onClick={() => setOn(!on)} className={`toggle ${on ? 'on' : ''}`}><span /></button>
+function Toggle({ on, onChange, label }: { on: boolean; onChange: () => void; label: string }) {
+  return <button type="button" role="switch" aria-label={label} aria-checked={on} onClick={onChange} className={`toggle ${on ? 'on' : ''}`}><span /></button>
 }
 
 function NotificationSettings() {
   const navigate = useNavigate()
+  const { preferences, setPreferences } = useAppData()
+  const [notifications, setNotifications] = useState(preferences.notifications)
+  const toggle = (index: number) => setNotifications((current) => current.map((value, itemIndex) => itemIndex === index ? !value : value))
   const handleSave = () => {
+    setPreferences((current) => ({ ...current, notifications }))
     alert('Notification settings saved successfully.')
     navigate('/settings')
   }
   return (
     <SettingsLayout>
       <section className="notification-card">
-        <div><h3>Security Notification</h3><p>Receive emails about your account security.</p></div><Toggle />
-        <div><h3>New Subscription</h3><p>Notify me when a customer subscribes.</p></div><Toggle />
-        <div><h3>Meal Updates</h3><p>Receive updates about meal content.</p></div><Toggle on={false} />
-        <div><h3>Marketing emails</h3><p>Receive product news and offers.</p></div><Toggle />
+        <div><h3>Security Notification</h3><p>Receive emails about your account security.</p></div><Toggle label="Security notifications" on={notifications[0]} onChange={() => toggle(0)} />
+        <div><h3>New Subscription</h3><p>Notify me when a customer subscribes.</p></div><Toggle label="New subscription notifications" on={notifications[1]} onChange={() => toggle(1)} />
+        <div><h3>Meal Updates</h3><p>Receive updates about meal content.</p></div><Toggle label="Meal update notifications" on={notifications[2]} onChange={() => toggle(2)} />
+        <div><h3>Marketing emails</h3><p>Receive product news and offers.</p></div><Toggle label="Marketing emails" on={notifications[3]} onChange={() => toggle(3)} />
         <button className="dark-button" onClick={handleSave}>Save changes</button>
       </section>
     </SettingsLayout>
   )
 }
 
-const pageCopy = {
-  privacy: {
-    title: 'Privacy Policy',
-    text: 'At Sizzl, we value your privacy and are committed to protecting your personal information. This policy explains how we collect, use, store, and safeguard information when you use our meal management services. We only collect information necessary to provide a safe, personalized experience, process subscriptions, and improve our products. Your information is never sold to third parties. We use appropriate security measures and retain data only for as long as required to deliver our services or meet legal obligations.',
-  },
-  about: {
-    title: 'About Us',
-    text: 'Sizzl makes everyday meal planning simple, personal, and enjoyable. Our platform helps people discover meals, organize food choices, and manage subscriptions in one clear place. We believe healthy decisions should fit naturally into daily life, so we combine practical tools with thoughtfully selected recipes and reliable nutritional information. Our team is focused on building a friendly service that saves time and supports better eating habits.',
-  },
-}
-
 function TextSettings({ kind, edit = false }: { kind: 'privacy' | 'about'; edit?: boolean }) {
   const navigate = useNavigate()
-  const copy = pageCopy[kind]
-  const [val, setVal] = useState(copy.text)
+  const { privacy, setPrivacy, about, setAbout } = useAppData()
+  const copy = initialPageCopy[kind]
+  const currentValue = kind === 'privacy' ? privacy : about
+  const [val, setVal] = useState(currentValue)
+  const editorRef = useRef<HTMLTextAreaElement>(null)
+
+  const formatSelection = (before: string, after = before, linePrefix = '') => {
+    const editor = editorRef.current
+    if (!editor) return
+    const start = editor.selectionStart
+    const end = editor.selectionEnd
+    const selected = val.slice(start, end)
+    const replacement = linePrefix
+      ? selected.split('\n').map((line) => `${linePrefix}${line}`).join('\n')
+      : `${before}${selected}${after}`
+    setVal(`${val.slice(0, start)}${replacement}${val.slice(end)}`)
+    window.setTimeout(() => {
+      editor.focus()
+      editor.setSelectionRange(start + (linePrefix ? linePrefix.length : before.length), start + replacement.length - (linePrefix ? 0 : after.length))
+    })
+  }
 
   const handleUpdate = () => {
-    copy.text = val
+    if (!val.trim()) return
+    if (kind === 'privacy') setPrivacy(val.trim())
+    else setAbout(val.trim())
     alert(`${copy.title} updated successfully.`)
     navigate(`/settings/${kind}`)
   }
@@ -710,8 +927,8 @@ function TextSettings({ kind, edit = false }: { kind: 'privacy' | 'about'; edit?
     <SettingsLayout>
       <section className={`text-settings ${edit ? 'editing' : ''}`}>
         <h3>{edit ? `Edit ${copy.title}` : copy.title}</h3>
-        <div className="editor-bar">{edit && <><b>B</b><i>I</i><u>U</u><span>≡</span><span>☷</span></>}</div>
-        {edit ? <textarea value={val} onChange={(e) => setVal(e.target.value)} /> : <p>{copy.text}</p>}
+        <div className="editor-bar">{edit && <><b role="button" tabIndex={0} onClick={() => formatSelection('**')}>B</b><i role="button" tabIndex={0} onClick={() => formatSelection('_')}>I</i><u role="button" tabIndex={0} onClick={() => formatSelection('<u>', '</u>')}>U</u><span role="button" tabIndex={0} onClick={() => formatSelection('', '', '1. ')}>≡</span><span role="button" tabIndex={0} onClick={() => formatSelection('', '', '• ')}>☷</span></>}</div>
+        {edit ? <textarea ref={editorRef} value={val} onChange={(e) => setVal(e.target.value)} required /> : <p>{currentValue}</p>}
         {edit ? (
           <button type="button" onClick={handleUpdate} className="dark-button">Update</button>
         ) : (
@@ -722,24 +939,16 @@ function TextSettings({ kind, edit = false }: { kind: 'privacy' | 'about'; edit?
   )
 }
 
-const contactDetails = {
-  title: 'Get in touch with us',
-  email: 'hello@sizzl.com',
-  phone: '+1 123 456 789',
-  address: 'Dhaka, Bangladesh'
-}
-
 function ContactSettings({ edit = false }: { edit?: boolean }) {
   const navigate = useNavigate()
-  const [email, setEmail] = useState(contactDetails.email)
-  const [phone, setPhone] = useState(contactDetails.phone)
-  const [address, setAddress] = useState(contactDetails.address)
+  const { contact, setContact } = useAppData()
+  const [email, setEmail] = useState(contact.email)
+  const [phone, setPhone] = useState(contact.phone)
+  const [address, setAddress] = useState(contact.address)
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
-    contactDetails.email = email
-    contactDetails.phone = phone
-    contactDetails.address = address
+    setContact((current) => ({ ...current, email: email.trim(), phone: phone.trim(), address: address.trim() }))
     alert('Contact settings saved successfully.')
     navigate('/settings/contact')
   }
@@ -757,9 +966,9 @@ function ContactSettings({ edit = false }: { edit?: boolean }) {
           </form>
         ) : (
           <div className="contact-info">
-            <span>Mail</span><strong>{contactDetails.email}</strong>
-            <span>Phone number</span><strong>{contactDetails.phone}</strong>
-            <span>Address</span><strong>{contactDetails.address}</strong>
+            <span>Mail</span><strong>{contact.email}</strong>
+            <span>Phone number</span><strong>{contact.phone}</strong>
+            <span>Address</span><strong>{contact.address}</strong>
             <Link className="dark-button wide" to="/settings/contact/edit">Edit</Link>
           </div>
         )}
@@ -770,8 +979,9 @@ function ContactSettings({ edit = false }: { edit?: boolean }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Shell>
+    <AppDataProvider>
+      <BrowserRouter>
+        <Shell>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/users" element={<Users />} />
@@ -781,7 +991,8 @@ export default function App() {
           <Route path="/subscription" element={<SubscriptionOverview />} />
           <Route path="/subscription/plans" element={<SubscriptionPlans />} />
           <Route path="/subscription/create" element={<SubscriptionForm />} />
-          <Route path="/subscription/edit" element={<SubscriptionForm edit />} />
+          <Route path="/subscription/edit/:id" element={<SubscriptionForm edit />} />
+          <Route path="/subscription/edit" element={<Navigate to="/subscription/plans" replace />} />
           <Route path="/earnings" element={<Earnings />} />
           <Route path="/earnings/:id" element={<DetailCard earnings />} />
           <Route path="/settings" element={<GeneralSettings />} />
@@ -797,7 +1008,8 @@ export default function App() {
           <Route path="/settings/contact/edit" element={<ContactSettings edit />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </Shell>
-    </BrowserRouter>
+        </Shell>
+      </BrowserRouter>
+    </AppDataProvider>
   )
 }
