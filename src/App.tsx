@@ -64,7 +64,7 @@ function Shell({ children }: { children: ReactNode }) {
   const location = useLocation()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 900)
   const [profileOpen, setProfileOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [search, setSearch] = useState(searchParams.get('q') ?? '')
@@ -72,7 +72,7 @@ function Shell({ children }: { children: ReactNode }) {
     to === '/' ? location.pathname === '/' : location.pathname.startsWith(to)
 
   useEffect(() => {
-    setSidebarOpen(false)
+    setSidebarOpen(window.innerWidth > 900)
     setProfileOpen(false)
     setNotificationsOpen(false)
   }, [location.pathname])
@@ -83,13 +83,24 @@ function Shell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
+      if (search.trim()) {
+        const searchablePaths = ['/', '/users', '/meals', '/earnings']
+        const currentPath = location.pathname.replace(/\/$/, '') || '/'
+        const isSearchable = searchablePaths.some(p => 
+          p === '/' ? currentPath === '/' : currentPath.startsWith(p)
+        )
+        if (!isSearchable) {
+          navigate(`/users?q=${encodeURIComponent(search.trim())}`, { replace: true })
+          return
+        }
+      }
       const next = new URLSearchParams(searchParams)
       if (search.trim()) next.set('q', search.trim())
       else next.delete('q')
       if (next.toString() !== searchParams.toString()) setSearchParams(next, { replace: true })
     }, 250)
     return () => window.clearTimeout(timeout)
-  }, [search, searchParams, setSearchParams])
+  }, [search, searchParams, setSearchParams, location.pathname, navigate])
 
   const clearSearch = () => {
     setSearch('')
@@ -104,7 +115,7 @@ function Shell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className={`app-shell ${sidebarOpen ? 'sidebar-open' : ''}`}>
+    <div className={`app-shell ${sidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}>
       <button
         className="sidebar-backdrop"
         aria-label="Close navigation"
@@ -443,16 +454,13 @@ function MealForm({
 }
 
 function Meals() {
-  const [searchParams] = useSearchParams()
-  const globalQuery = searchParams.get('q') ?? ''
+  const [searchParams, setSearchParams] = useSearchParams()
+  const query = searchParams.get('q') ?? ''
   const [mealRows, setMealRows] = useState(() => meals.map((meal) => [...meal]))
-  const [query, setQuery] = useState(globalQuery)
   const [category, setCategory] = useState('All')
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [draft, setDraft] = useState<MealDraft>({ name: '', type: 'Dinner', duration: '', price: '' })
   const [error, setError] = useState('')
-
-  useEffect(() => setQuery(globalQuery), [globalQuery])
 
   const filteredMeals = mealRows.filter((meal) => {
     const matchesQuery = meal.join(' ').toLowerCase().includes(query.toLowerCase())
@@ -487,10 +495,26 @@ function Meals() {
     document.querySelector<HTMLInputElement>('#meal-name')?.focus()
   }
 
+  const updateSearch = (value: string) => {
+    const next = new URLSearchParams(searchParams)
+    if (value.trim()) next.set('q', value.trim())
+    else next.delete('q')
+    setSearchParams(next, { replace: true })
+  }
+
   return (
     <>
       <section className="meal-search-row">
-        <label className="searchbox small"><Search /><input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === 'Escape' && setQuery('')} placeholder="Search meals..." />{query && <button className="search-clear" onClick={() => setQuery('')} type="button"><X /></button>}</label>
+        <label className="searchbox small">
+          <Search />
+          <input
+            value={query}
+            onChange={(event) => updateSearch(event.target.value)}
+            onKeyDown={(event) => event.key === 'Escape' && updateSearch('')}
+            placeholder="Search meals..."
+          />
+          {query && <button className="search-clear" onClick={() => updateSearch('')} type="button"><X /></button>}
+        </label>
         <div className="meal-tabs">{['All','Breakfast','Lunch','Dinner'].map((tab) => <button key={tab} className={category === tab ? 'active' : ''} onClick={() => setCategory(tab)}>{tab}</button>)}</div>
       </section>
       <MealForm draft={draft} editing={editingIndex !== null} error={error} onChange={(field, value) => setDraft((current) => ({ ...current, [field]: value }))} onSubmit={saveMeal} onCancel={resetDraft} />
@@ -569,24 +593,31 @@ function SubscriptionPlans() {
 }
 
 function SubscriptionForm({ edit = false }: { edit?: boolean }) {
+  const navigate = useNavigate()
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault()
+    alert(edit ? 'Subscription updated successfully.' : 'Subscription created successfully.')
+    navigate('/subscription/plans')
+  }
   return (
     <div className="narrow-page">
       <Link to="/subscription/plans" className="back"><ArrowLeft /> {edit ? 'Edit Subscription' : 'Create Subscription'}</Link>
-      <form className="form-card">
+      <form className="form-card" onSubmit={handleSubmit}>
         <h3>Create Subscription</h3>
-        <label>Subscription Plan Name<input defaultValue={edit ? 'Premium Plan' : ''} placeholder="Subscription Plan Name" /></label>
-        <label>Subscription Price<input defaultValue={edit ? '29.99' : ''} placeholder="29.99" /></label>
-        <label>Duration<select><option>Select</option></select></label>
-        <label className="feature-label">Features<select><option>Monthly</option></select><button type="button">Add</button></label>
+        <label>Subscription Plan Name<input defaultValue={edit ? 'Premium Plan' : ''} placeholder="Subscription Plan Name" required /></label>
+        <label>Subscription Price<input defaultValue={edit ? '29.99' : ''} placeholder="29.99" required /></label>
+        <label>Duration<select required><option value="monthly">Monthly</option><option value="annual">Annual</option></select></label>
+        <label className="feature-label">Features<select><option>Monthly</option></select><button type="button" onClick={() => alert('Feature added successfully.')}>Add</button></label>
         <input placeholder="Nutrition tracker" />
         <input placeholder="Advanced analytics" />
         <input placeholder="Description" />
-        <button type="button" className="outline-button">+ Add More</button>
-        <button type="button" className="dark-button wide">{edit ? 'Update' : 'Create'}</button>
+        <button type="button" className="outline-button" onClick={() => alert('Feature input added.')}>+ Add More</button>
+        <button type="submit" className="dark-button wide">{edit ? 'Update' : 'Create'}</button>
       </form>
     </div>
   )
 }
+
 
 function Earnings() {
   return (
@@ -629,24 +660,36 @@ function GeneralSettings() {
 }
 
 function BasicSettingsForm({ type }: { type: 'profile' | 'password' | 'language' }) {
+  const navigate = useNavigate()
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault()
+    alert('Changes saved successfully.')
+    navigate('/settings')
+  }
   return (
     <SettingsLayout>
-      <form className="form-card settings-form">
+      <form className="form-card settings-form" onSubmit={handleSubmit}>
         <h3>{type === 'profile' ? 'Edit Profile' : type === 'password' ? 'Change Password' : 'Change Language'}</h3>
-        {type === 'profile' && <><label>Full Name<input defaultValue="Bashar Islam" /></label><label>Email<input defaultValue="bashar@gmail.com" /></label><label>Phone<input defaultValue="1234567890" /></label><label>Address<input defaultValue="Dhaka, Bangladesh" /></label></>}
-        {type === 'password' && <><label>Current Password<input type="password" placeholder="••••••••" /></label><label>New Password<input type="password" placeholder="••••••••" /></label><label>Confirm Password<input type="password" placeholder="••••••••" /></label></>}
-        {type === 'language' && <><label>Change Language<select><option>English (UK)</option></select></label><label>Time Zone<select><option>GMT +06:00</option></select></label></>}
-        <button type="button" className="dark-button wide">{type === 'language' ? 'Save Setting' : 'Save Changes'}</button>
+        {type === 'profile' && <><label>Full Name<input defaultValue="Bashar Islam" required /></label><label>Email<input defaultValue="bashar@gmail.com" required /></label><label>Phone<input defaultValue="1234567890" required /></label><label>Address<input defaultValue="Dhaka, Bangladesh" required /></label></>}
+        {type === 'password' && <><label>Current Password<input type="password" placeholder="••••••••" required /></label><label>New Password<input type="password" placeholder="••••••••" required /></label><label>Confirm Password<input type="password" placeholder="••••••••" required /></label></>}
+        {type === 'language' && <><label>Change Language<select required><option value="English (UK)">English (UK)</option></select></label><label>Time Zone<select required><option value="GMT +06:00">GMT +06:00</option></select></label></>}
+        <button type="submit" className="dark-button wide">{type === 'language' ? 'Save Setting' : 'Save Changes'}</button>
       </form>
     </SettingsLayout>
   )
 }
 
-function Toggle({ on = true }: { on?: boolean }) {
-  return <button className={`toggle ${on ? 'on' : ''}`}><span /></button>
+function Toggle({ on: initialOn = true }: { on?: boolean }) {
+  const [on, setOn] = useState(initialOn)
+  return <button type="button" onClick={() => setOn(!on)} className={`toggle ${on ? 'on' : ''}`}><span /></button>
 }
 
 function NotificationSettings() {
+  const navigate = useNavigate()
+  const handleSave = () => {
+    alert('Notification settings saved successfully.')
+    navigate('/settings')
+  }
   return (
     <SettingsLayout>
       <section className="notification-card">
@@ -654,7 +697,7 @@ function NotificationSettings() {
         <div><h3>New Subscription</h3><p>Notify me when a customer subscribes.</p></div><Toggle />
         <div><h3>Meal Updates</h3><p>Receive updates about meal content.</p></div><Toggle on={false} />
         <div><h3>Marketing emails</h3><p>Receive product news and offers.</p></div><Toggle />
-        <button className="dark-button">Save changes</button>
+        <button className="dark-button" onClick={handleSave}>Save changes</button>
       </section>
     </SettingsLayout>
   )
@@ -672,33 +715,72 @@ const pageCopy = {
 }
 
 function TextSettings({ kind, edit = false }: { kind: 'privacy' | 'about'; edit?: boolean }) {
+  const navigate = useNavigate()
   const copy = pageCopy[kind]
+  const [val, setVal] = useState(copy.text)
+
+  const handleUpdate = () => {
+    copy.text = val
+    alert(`${copy.title} updated successfully.`)
+    navigate(`/settings/${kind}`)
+  }
+
   return (
     <SettingsLayout>
       <section className={`text-settings ${edit ? 'editing' : ''}`}>
         <h3>{edit ? `Edit ${copy.title}` : copy.title}</h3>
         <div className="editor-bar">{edit && <><b>B</b><i>I</i><u>U</u><span>≡</span><span>☷</span></>}</div>
-        {edit ? <textarea defaultValue={copy.text} /> : <p>{copy.text}</p>}
-        <Link to={edit ? `/settings/${kind}` : `/settings/${kind}/edit`} className="dark-button">{edit ? 'Update' : 'Edit'}</Link>
+        {edit ? <textarea value={val} onChange={(e) => setVal(e.target.value)} /> : <p>{copy.text}</p>}
+        {edit ? (
+          <button type="button" onClick={handleUpdate} className="dark-button">Update</button>
+        ) : (
+          <Link to={`/settings/${kind}/edit`} className="dark-button">Edit</Link>
+        )}
       </section>
     </SettingsLayout>
   )
 }
 
+const contactDetails = {
+  title: 'Get in touch with us',
+  email: 'hello@sizzl.com',
+  phone: '+1 123 456 789',
+  address: 'Dhaka, Bangladesh'
+}
+
 function ContactSettings({ edit = false }: { edit?: boolean }) {
+  const navigate = useNavigate()
+  const [email, setEmail] = useState(contactDetails.email)
+  const [phone, setPhone] = useState(contactDetails.phone)
+  const [address, setAddress] = useState(contactDetails.address)
+
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault()
+    contactDetails.email = email
+    contactDetails.phone = phone
+    contactDetails.address = address
+    alert('Contact settings saved successfully.')
+    navigate('/settings/contact')
+  }
+
   return (
     <SettingsLayout>
       <section className="contact-card">
         <h3>{edit ? 'Edit Contact Info' : 'Contact Us'}</h3>
         {edit ? (
-          <form>
-            <label>Title<input defaultValue="Get in touch with us" /></label>
-            <label>Mail address<input defaultValue="hello@sizzl.com" /></label>
-            <label>Phone Number<input defaultValue="+1 123 456 789" /></label>
-            <button type="button" className="dark-button wide">Save contact info</button>
+          <form onSubmit={handleSubmit}>
+            <label>Mail address<input value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
+            <label>Phone Number<input value={phone} onChange={(e) => setPhone(e.target.value)} required /></label>
+            <label>Address<input value={address} onChange={(e) => setAddress(e.target.value)} required /></label>
+            <button type="submit" className="dark-button wide">Save contact info</button>
           </form>
         ) : (
-          <div className="contact-info"><span>Mail</span><strong>hello@sizzl.com</strong><span>Phone number</span><strong>+1 123 456 789</strong><span>Address</span><strong>Dhaka, Bangladesh</strong><Link className="dark-button wide" to="/settings/contact/edit">Edit</Link></div>
+          <div className="contact-info">
+            <span>Mail</span><strong>{contactDetails.email}</strong>
+            <span>Phone number</span><strong>{contactDetails.phone}</strong>
+            <span>Address</span><strong>{contactDetails.address}</strong>
+            <Link className="dark-button wide" to="/settings/contact/edit">Edit</Link>
+          </div>
         )}
       </section>
     </SettingsLayout>
