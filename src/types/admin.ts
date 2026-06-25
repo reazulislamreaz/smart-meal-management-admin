@@ -22,6 +22,19 @@ export type ContactDetails = {
   address: string;
 };
 
+export type AppConfig = {
+  trialDays: string;
+  defaultHousehold: string;
+  aiModel: string;
+  maxSuggestions: string;
+};
+
+export type BannersCopy = {
+  paywallHeadline: string;
+  onboardingWelcome: string;
+  planCompleteMessage: string;
+};
+
 export type AppData = {
   profile: Profile;
   setProfile: Dispatch<SetStateAction<Profile>>;
@@ -33,11 +46,16 @@ export type AppData = {
   setAbout: Dispatch<SetStateAction<string>>;
   contact: ContactDetails;
   setContact: Dispatch<SetStateAction<ContactDetails>>;
+  appConfig: AppConfig;
+  setAppConfig: Dispatch<SetStateAction<AppConfig>>;
+  bannersCopy: BannersCopy;
+  setBannersCopy: Dispatch<SetStateAction<BannersCopy>>;
 };
 
 export type MealDraft = {
   name: string;
   type: string;
+  cuisine: string;
   duration: string;
   price: string;
 };

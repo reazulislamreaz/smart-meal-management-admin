@@ -12,7 +12,7 @@ import SubscriptionForm from "@/pages/SubscriptionForm";
 import Earnings from "@/pages/Earnings";
 import GeneralSettings from "@/pages/settings/GeneralSettings";
 import BasicSettingsForm from "@/pages/settings/BasicSettingsForm";
-import NotificationSettings from "@/pages/settings/NotificationSettings";
+import AppConfiguration from "@/pages/settings/AppConfiguration";
 import TextSettings from "@/pages/settings/TextSettings";
 import ContactSettings from "@/pages/settings/ContactSettings";
 
@@ -41,18 +41,7 @@ export default function App() {
               path="/settings/edit-profile"
               element={<BasicSettingsForm type="profile" />}
             />
-            <Route
-              path="/settings/password"
-              element={<BasicSettingsForm type="password" />}
-            />
-            <Route
-              path="/settings/notification"
-              element={<NotificationSettings />}
-            />
-            <Route
-              path="/settings/language"
-              element={<BasicSettingsForm type="language" />}
-            />
+            <Route path="/settings/config" element={<AppConfiguration />} />
             <Route
               path="/settings/privacy"
               element={<TextSettings type="privacy" />}
@@ -60,6 +49,10 @@ export default function App() {
             <Route
               path="/settings/about"
               element={<TextSettings type="about" />}
+            />
+            <Route
+              path="/settings/password"
+              element={<BasicSettingsForm type="password" />}
             />
             <Route path="/settings/contact" element={<ContactSettings />} />
             <Route path="*" element={<Navigate to="/" replace />} />

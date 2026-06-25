@@ -11,6 +11,8 @@ import {
   initialPreferences,
   initialPageCopy,
   initialContactDetails,
+  defaultAppConfig,
+  defaultBannersCopy,
 } from "@/data/adminData";
 
 const AppDataContext = createContext<AppData | null>(null);
@@ -39,6 +41,14 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     "sizzl-contact",
     initialContactDetails,
   );
+  const [appConfig, setAppConfig] = useStoredState(
+    "sizzl-appconfig",
+    defaultAppConfig,
+  );
+  const [bannersCopy, setBannersCopy] = useStoredState(
+    "sizzl-bannerscopy",
+    defaultBannersCopy,
+  );
 
   const value = useMemo(
     () => ({
@@ -52,6 +62,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       setAbout,
       contact,
       setContact,
+      appConfig,
+      setAppConfig,
+      bannersCopy,
+      setBannersCopy,
     }),
     [
       about,
@@ -64,6 +78,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       setPreferences,
       setPrivacy,
       setProfile,
+      appConfig,
+      setAppConfig,
+      bannersCopy,
+      setBannersCopy,
     ],
   );
 

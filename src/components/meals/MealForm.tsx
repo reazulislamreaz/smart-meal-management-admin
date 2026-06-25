@@ -1,5 +1,4 @@
 import type { FormEvent } from "react";
-import { Link } from "react-router-dom";
 import type { MealDraft } from "@/types/admin";
 
 export function MealForm({
@@ -18,25 +17,37 @@ export function MealForm({
   onCancel: () => void;
 }) {
   return (
-    <form className="meal-form panel" onSubmit={onSubmit}>
-      <div className="meal-form-top">
-        <Link to="/meal-options" className="dark-button">
-          + Add Content
-        </Link>
-        <button
-          type="button"
-          className="dark-button"
-          onClick={() =>
-            document.querySelector<HTMLInputElement>("#meal-name")?.focus()
-          }
-        >
-          + Add Meal
-        </button>
-      </div>
-      <h3>{editing ? "Edit meal" : "Add new meal"}</h3>
+    <form
+      className="meal-form panel"
+      onSubmit={onSubmit}
+      style={{ position: "relative", padding: "20px", marginBottom: "16px" }}
+    >
+      <button
+        type="button"
+        onClick={onCancel}
+        style={{
+          position: "absolute",
+          top: "16px",
+          right: "16px",
+          background: "transparent",
+          border: 0,
+          cursor: "pointer",
+          color: "#8a8d92",
+          fontSize: "18px",
+          fontWeight: "bold",
+        }}
+        aria-label="Close"
+      >
+        ×
+      </button>
+
+      <h3 style={{ margin: "0 0 16px", fontSize: "14px", fontWeight: 600 }}>
+        {editing ? "Edit meal" : "Add new meal"}
+      </h3>
+
       <div className="meal-inputs">
         <label>
-          Name
+          NAME
           <input
             id="meal-name"
             value={draft.name}
@@ -46,7 +57,7 @@ export function MealForm({
           />
         </label>
         <label>
-          Type
+          TYPE
           <select
             value={draft.type}
             onChange={(event) => onChange("type", event.target.value)}
@@ -57,7 +68,16 @@ export function MealForm({
           </select>
         </label>
         <label>
-          Duration
+          CUISINE
+          <input
+            value={draft.cuisine}
+            onChange={(event) => onChange("cuisine", event.target.value)}
+            placeholder="e.g. British"
+            required
+          />
+        </label>
+        <label>
+          TIME
           <input
             value={draft.duration}
             onChange={(event) => onChange("duration", event.target.value)}
@@ -66,29 +86,30 @@ export function MealForm({
           />
         </label>
         <label>
-          Price
+          $/SERVING
           <input
             value={draft.price}
             onChange={(event) => onChange("price", event.target.value)}
-            placeholder="e.g. $5.50"
+            placeholder="e.g. 5.50"
             required
           />
         </label>
       </div>
+
       {error && (
-        <p className="form-message error" role="alert">
+        <p
+          className="form-message error"
+          role="alert"
+          style={{ marginTop: "12px", marginBottom: "12px" }}
+        >
           {error}
         </p>
       )}
-      <div className="form-actions">
-        <button className="dark-button" type="submit">
+
+      <div className="form-actions" style={{ marginTop: "16px" }}>
+        <button className="dark-button" type="submit" style={{ height: "32px", fontSize: "11px", padding: "0 16px" }}>
           {editing ? "Update meal" : "Save meal"}
         </button>
-        {editing && (
-          <button className="outline-button" type="button" onClick={onCancel}>
-            Cancel
-          </button>
-        )}
       </div>
     </form>
   );

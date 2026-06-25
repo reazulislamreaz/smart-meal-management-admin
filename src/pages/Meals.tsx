@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { Search, X, Pencil, Trash2 } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { useStoredState } from "@/hooks/useStoredState";
 import { meals as initialMealsData } from "@/data/adminData";
 import type { MealDraft } from "@/types/admin";
@@ -11,15 +11,18 @@ import MealForm from "@/components/meals/MealForm";
 export function Meals() {
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get("q") ?? "";
+
   const [mealRows, setMealRows] = useStoredState(
     "sizzl-meals",
     initialMealsData.map((meal) => [...meal]),
   );
   const [category, setCategory] = useState("All");
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [draft, setDraft] = useState<MealDraft>({
     name: "",
     type: "Dinner",
+    cuisine: "",
     duration: "",
     price: "",
   });
@@ -34,6 +37,7 @@ export function Meals() {
       .includes(query.toLowerCase());
     return matchesQuery && (category === "All" || meal[1] === category);
   });
+
   const pageCount = Math.max(1, Math.ceil(filteredMeals.length / pageSize));
   const visibleMeals = filteredMeals.slice(
     (page - 1) * pageSize,
@@ -43,7 +47,7 @@ export function Meals() {
   useEffect(() => setPage(1), [query, category]);
 
   const resetDraft = () => {
-    setDraft({ name: "", type: "Dinner", duration: "", price: "" });
+    setDraft({ name: "", type: "Dinner", cuisine: "", duration: "", price: "" });
     setEditingIndex(null);
     setError("");
   };
@@ -52,21 +56,22 @@ export function Meals() {
     event.preventDefault();
     if (
       !draft.name.trim() ||
+      !draft.cuisine.trim() ||
       !draft.duration.trim() ||
       !/^\$?\d+(\.\d{1,2})?$/.test(draft.price.trim())
     ) {
-      setError("Enter a meal name, duration, and a valid price.");
+      setError("Enter a meal name, cuisine, duration, and a valid price.");
       return;
     }
     const price = draft.price.startsWith("$") ? draft.price : `$${draft.price}`;
     const row = [
       draft.name.trim(),
       draft.type,
-      "American",
+      draft.cuisine.trim(),
       draft.duration.trim(),
       price,
-      "ACTIVE",
-      "18 - 45",
+      editingIndex !== null ? (mealRows[editingIndex][5] ?? "Active") : "Active",
+      editingIndex !== null ? (mealRows[editingIndex][6] ?? "0") : "0",
     ];
     setMealRows((current) =>
       editingIndex === null
@@ -74,6 +79,7 @@ export function Meals() {
         : current.map((meal, index) => (index === editingIndex ? row : meal)),
     );
     resetDraft();
+    setIsFormOpen(false);
   };
 
   const editMeal = (meal: string[]) => {
@@ -82,65 +88,113 @@ export function Meals() {
     setDraft({
       name: meal[0],
       type: meal[1],
+      cuisine: meal[2] ?? "American",
       duration: meal[3],
       price: meal[4],
     });
     setError("");
-    document.querySelector<HTMLInputElement>("#meal-name")?.focus();
+    setIsFormOpen(true);
+    window.setTimeout(() => {
+      document.querySelector<HTMLInputElement>("#meal-name")?.focus();
+    }, 0);
   };
 
-  const updateSearch = (value: string) => {
+  const handleSearchChange = (val: string) => {
     const next = new URLSearchParams(searchParams);
-    if (value.trim()) next.set("q", value.trim());
+    if (val) next.set("q", val);
     else next.delete("q");
+    setSearchParams(next, { replace: true });
+  };
+
+  const clearSearch = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("q");
     setSearchParams(next, { replace: true });
   };
 
   return (
     <>
-      <section className="meal-search-row">
-        <label className="searchbox small">
-          <Search />
-          <input
-            aria-label="Search meals"
-            value={query}
-            onChange={(event) => updateSearch(event.target.value)}
-            onKeyDown={(event) => event.key === "Escape" && updateSearch("")}
-            placeholder="Search meals..."
-          />
-          {query && (
-            <button
-              className="search-clear"
-              onClick={() => updateSearch("")}
-              type="button"
-            >
-              <X />
-            </button>
-          )}
-        </label>
-        <div className="meal-tabs">
-          {["All", "Breakfast", "Lunch", "Dinner"].map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              className={category === tab ? "active" : ""}
-              onClick={() => setCategory(tab)}
-            >
-              {tab}
-            </button>
-          ))}
+      <section
+        className="meal-search-row"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "12px",
+          marginBottom: "14px",
+          width: "100%",
+        }}
+      >
+        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          <label className="searchbox small">
+            <Search />
+            <input
+              aria-label="Search meals"
+              value={query}
+              onChange={(event) => handleSearchChange(event.target.value)}
+              onKeyDown={(event) => event.key === "Escape" && clearSearch()}
+              placeholder="Search meals..."
+            />
+            {query && (
+              <button
+                className="search-clear"
+                onClick={clearSearch}
+                type="button"
+              >
+                <X />
+              </button>
+            )}
+          </label>
+          <div className="meal-tabs">
+            {["All", "Breakfast", "Lunch", "Dinner"].map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                className={category === tab ? "active" : ""}
+                onClick={() => setCategory(tab)}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: "8px" }}>
+          <Link to="/meal-options" className="dark-button" style={{ height: "32px", fontSize: "11px", padding: "0 14px", display: "inline-flex", alignItems: "center" }}>
+            + Add Content
+          </Link>
+          <button
+            type="button"
+            className="dark-button"
+            style={{ height: "32px", fontSize: "11px", padding: "0 14px" }}
+            onClick={() => {
+              setIsFormOpen(true);
+              window.setTimeout(() => {
+                document.querySelector<HTMLInputElement>("#meal-name")?.focus();
+              }, 0);
+            }}
+          >
+            + Add Meal
+          </button>
         </div>
       </section>
-      <MealForm
-        draft={draft}
-        editing={editingIndex !== null}
-        error={error}
-        onChange={(field, value) =>
-          setDraft((current) => ({ ...current, [field]: value }))
-        }
-        onSubmit={saveMeal}
-        onCancel={resetDraft}
-      />
+
+      {(isFormOpen || editingIndex !== null) && (
+        <MealForm
+          draft={draft}
+          editing={editingIndex !== null}
+          error={error}
+          onChange={(field, value) =>
+            setDraft((current) => ({ ...current, [field]: value }))
+          }
+          onSubmit={saveMeal}
+          onCancel={() => {
+            resetDraft();
+            setIsFormOpen(false);
+          }}
+        />
+      )}
+
       <section className="table-panel meal-table">
         <table>
           <thead>
@@ -150,9 +204,9 @@ export function Meals() {
                 "TYPE",
                 "CUISINE",
                 "TIME",
-                "ESTIMATE",
+                "$/SERVING",
                 "STATUS",
-                "AGE",
+                "USES",
                 "",
               ].map((h) => (
                 <th key={h}>{h}</th>

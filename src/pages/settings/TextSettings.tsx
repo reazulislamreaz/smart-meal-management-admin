@@ -5,21 +5,24 @@ import SettingsLayout from "@/components/settings/SettingsLayout";
 
 export function TextSettings({ type }: { type: "privacy" | "about" }) {
   const { privacy, setPrivacy, about, setAbout } = useAppData();
-  const title = type === "privacy" ? "Privacy Policy" : "About Us";
+  const rawTitle = type === "privacy" ? "Privacy Policy" : "About us";
   const source = type === "privacy" ? privacy : about;
   const setter = type === "privacy" ? setPrivacy : setAbout;
 
   const [text, setText] = useState(source);
+  const [isEditing, setIsEditing] = useState(false);
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
     setText(source);
+    setIsEditing(false);
     setSuccess("");
   }, [type, source]);
 
-  const save = () => {
+  const handleUpdate = () => {
     setter(text);
-    setSuccess(`${title} saved successfully.`);
+    setIsEditing(false);
+    setSuccess(`${rawTitle} updated successfully.`);
   };
 
   const applyTag = (tag: "b" | "i" | "u") => {
@@ -39,45 +42,144 @@ export function TextSettings({ type }: { type: "privacy" | "about" }) {
 
   return (
     <SettingsLayout>
-      <section className="text-settings">
+      <section className="text-settings" style={{ padding: "20px", position: "relative" }}>
         {success && (
           <SettingsToast message={success} onDismiss={() => setSuccess("")} />
         )}
-        <div className="editor-bar">
-          <button
-            type="button"
-            className="editor-btn"
-            style={{ border: 0, background: "transparent" }}
-            onClick={() => applyTag("b")}
-          >
-            <b>B</b>
-          </button>
-          <button
-            type="button"
-            className="editor-btn"
-            style={{ border: 0, background: "transparent" }}
-            onClick={() => applyTag("i")}
-          >
-            <i>I</i>
-          </button>
-          <button
-            type="button"
-            className="editor-btn"
-            style={{ border: 0, background: "transparent" }}
-            onClick={() => applyTag("u")}
-          >
-            <u>U</u>
-          </button>
-        </div>
-        <h3>{title}</h3>
-        <textarea
-          aria-label={title}
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-        />
-        <button type="button" className="dark-button" onClick={save}>
-          Save Setting
-        </button>
+
+        {isEditing ? (
+          <>
+            <div
+              className="editor-bar"
+              style={{
+                display: "flex",
+                gap: "8px",
+                borderBottom: "1px solid #eceef0",
+                paddingBottom: "8px",
+                marginBottom: "12px",
+              }}
+            >
+              <button
+                type="button"
+                className="editor-btn"
+                style={{
+                  border: "1px solid #d8dadd",
+                  background: "#fff",
+                  borderRadius: "4px",
+                  padding: "4px 8px",
+                  fontSize: "11px",
+                  cursor: "pointer",
+                }}
+                onClick={() => applyTag("b")}
+              >
+                <b>B</b>
+              </button>
+              <button
+                type="button"
+                className="editor-btn"
+                style={{
+                  border: "1px solid #d8dadd",
+                  background: "#fff",
+                  borderRadius: "4px",
+                  padding: "4px 8px",
+                  fontSize: "11px",
+                  cursor: "pointer",
+                }}
+                onClick={() => applyTag("i")}
+              >
+                <i>I</i>
+              </button>
+              <button
+                type="button"
+                className="editor-btn"
+                style={{
+                  border: "1px solid #d8dadd",
+                  background: "#fff",
+                  borderRadius: "4px",
+                  padding: "4px 8px",
+                  fontSize: "11px",
+                  cursor: "pointer",
+                }}
+                onClick={() => applyTag("u")}
+              >
+                <u>U</u>
+              </button>
+            </div>
+            <h3 style={{ margin: "0 0 12px", fontSize: "14px", fontWeight: 600 }}>
+              Edit {rawTitle}
+            </h3>
+            <textarea
+              aria-label={rawTitle}
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+              style={{
+                width: "100%",
+                height: "220px",
+                padding: "10px",
+                border: "1px solid #d8dadd",
+                borderRadius: "4px",
+                fontSize: "12px",
+                lineHeight: 1.6,
+                resize: "none",
+                marginBottom: "16px",
+              }}
+            />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+              <button
+                type="button"
+                className="outline-button"
+                onClick={() => {
+                  setText(source);
+                  setIsEditing(false);
+                }}
+                style={{ padding: "6px 16px", borderRadius: "4px" }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="dark-button"
+                onClick={handleUpdate}
+                style={{ padding: "6px 16px", borderRadius: "4px" }}
+              >
+                Update
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <h3 style={{ margin: "0 0 16px", fontSize: "14px", fontWeight: 600 }}>
+              {rawTitle}
+            </h3>
+            <div
+              style={{
+                fontSize: "12px",
+                lineHeight: 1.7,
+                color: "#55595e",
+                whiteSpace: "pre-wrap",
+                marginBottom: "40px",
+              }}
+            >
+              {source}
+            </div>
+            <div
+              style={{
+                position: "absolute",
+                bottom: "20px",
+                right: "20px",
+              }}
+            >
+              <button
+                type="button"
+                className="dark-button"
+                onClick={() => setIsEditing(true)}
+                style={{ padding: "6px 20px", borderRadius: "4px" }}
+              >
+                Edit
+              </button>
+            </div>
+          </>
+        )}
       </section>
     </SettingsLayout>
   );

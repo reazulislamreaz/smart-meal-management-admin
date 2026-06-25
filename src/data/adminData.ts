@@ -11,13 +11,15 @@ import type {
   Preferences,
   ContactDetails,
   SubscriptionPlan,
+  AppConfig,
+  BannersCopy,
 } from "@/types/admin";
 
 export const initialProfile: Profile = {
   name: "Bashar Islam",
-  email: "bashar@gmail.com",
-  phone: "1234567890",
-  address: "Dhaka, Bangladesh",
+  email: "bashar.islam12@gmail.com",
+  phone: "1819488101",
+  address: "USA",
   role: "Admin",
   memberSince: "January",
 };
@@ -34,6 +36,20 @@ export const initialContactDetails: ContactDetails = {
   phone: "+1 123 456 789",
   address: "Dhaka, Bangladesh",
 };
+
+export const defaultAppConfig: AppConfig = {
+  trialDays: "7",
+  defaultHousehold: "4",
+  aiModel: "claude-sonnet-4-20250514",
+  maxSuggestions: "6",
+};
+
+export const defaultBannersCopy: BannersCopy = {
+  paywallHeadline: "Your free trial has ended",
+  onboardingWelcome: "Let's build your first meal plan.",
+  planCompleteMessage: "You cooked everything in this plan. Nice work.",
+};
+
 
 export const initialPageCopy = {
   privacy: {
@@ -67,70 +83,70 @@ export const nav = [
 
 export const meals = [
   [
-    "Chicken & Veg Teriyaki",
+    "Chicken & Veg Traybake",
     "Dinner",
     "British",
     "25m",
-    "$7.99",
-    "ACTIVE",
-    "28 - 40",
+    "$7.50",
+    "Active",
+    "18.4k",
   ],
-  ["Salmon Rice Bowls", "Dinner", "Asian", "20m", "$8.88", "ACTIVE", "24 - 35"],
+  ["Salmon Rice Bowls", "Dinner", "Asian", "20m", "$8.00", "Active", "16.2k"],
   [
     "Halloumi & Couscous",
     "Lunch",
     "Mediterranean",
-    "20m",
-    "$6.88",
-    "ACTIVE",
-    "22 - 44",
+    "28m",
+    "$6.00",
+    "Active",
+    "13.4k",
   ],
   [
     "Overnight Oats",
     "Breakfast",
     "American",
     "5m",
-    "$2.88",
-    "ACTIVE",
-    "19 - 30",
+    "$2.00",
+    "Active",
+    "12.8k",
   ],
-  ["Veggie Curry", "Dinner", "Indian", "25m", "$5.88", "ACTIVE", "21 - 36"],
+  ["Veggie Curry", "Dinner", "Indian", "25m", "$5.00", "Active", "11.9k"],
   [
-    "Beef Chilli Jackets",
+    "Beef Chili Jackets",
     "Dinner",
     "British",
     "50m",
-    "$7.99",
-    "ACTIVE",
-    "7 - 26",
+    "$7.00",
+    "Active",
+    "9.8k",
   ],
-  ["Greek Salad Jars", "Lunch", "Mediterranean", "15m", "$5.99", "DRAFT", "8"],
+  ["Greek Salad Jars", "Lunch", "Mediterranean", "15m", "$5.80", "Draft", "0"],
   [
-    "Pasta Chicken Pesto",
+    "Pesto Chicken Pasta",
     "Dinner",
     "Italian",
     "20m",
-    "$7.88",
-    "ACTIVE",
-    "5 - 71",
+    "$7.00",
+    "Active",
+    "8.7k",
   ],
   [
     "Shakshuka",
     "Breakfast",
-    "Mediterranean",
-    "25m",
-    "$4.88",
-    "ACTIVE",
-    "7 - 44",
+    "Middle Eastern",
+    "20m",
+    "$4.00",
+    "Active",
+    "7.6k",
   ],
   [
-    "Falafel Pitas",
+    "Falafel Pittas",
     "Lunch",
     "Middle Eastern",
     "15m",
-    "$5.88",
-    "INACTIVE",
-    "2 - 16",
+    "$5.00",
+    "Inactive",
+    "2.1k",
   ],
 ];
 

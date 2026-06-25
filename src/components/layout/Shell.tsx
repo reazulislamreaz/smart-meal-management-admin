@@ -20,7 +20,8 @@ export function Shell({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 900);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [search, setSearch] = useState(searchParams.get("q") ?? "");
+
+  const query = searchParams.get("q") ?? "";
 
   const active = (to: string) =>
     to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
@@ -57,23 +58,14 @@ export function Shell({ children }: { children: ReactNode }) {
     return () => document.removeEventListener("mousedown", closePopovers);
   }, [profileOpen, notificationsOpen]);
 
-  useEffect(() => {
-    setSearch(searchParams.get("q") ?? "");
-  }, [searchParams]);
-
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      const next = new URLSearchParams(searchParams);
-      if (search.trim()) next.set("q", search.trim());
-      else next.delete("q");
-      if (next.toString() !== searchParams.toString())
-        setSearchParams(next, { replace: true });
-    }, 250);
-    return () => window.clearTimeout(timeout);
-  }, [search, searchParams, setSearchParams]);
+  const handleSearchChange = (val: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (val) next.set("q", val);
+    else next.delete("q");
+    setSearchParams(next, { replace: true });
+  };
 
   const clearSearch = () => {
-    setSearch("");
     const next = new URLSearchParams(searchParams);
     next.delete("q");
     setSearchParams(next, { replace: true });
@@ -130,20 +122,16 @@ export function Shell({ children }: { children: ReactNode }) {
             <input
               aria-label="Search"
               placeholder={searchPlaceholder}
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              value={query}
+              onChange={(event) => handleSearchChange(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Escape") clearSearch();
                 if (event.key === "Enter") {
                   event.preventDefault();
-                  const next = new URLSearchParams(searchParams);
-                  if (search.trim()) next.set("q", search.trim());
-                  else next.delete("q");
-                  setSearchParams(next, { replace: true });
                 }
               }}
             />
-            {search && (
+            {query && (
               <button
                 type="button"
                 className="search-clear"
