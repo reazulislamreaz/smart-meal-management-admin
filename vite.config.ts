@@ -15,8 +15,8 @@ export default defineConfig({
     port: 9173,
     strictPort: true,
   },
-  server: {
-    port: 3000, // Your desired port
-    strictPort: true, // Prevent Vite from choosing another port if 3000 is busy
-  },
+  // server: {
+  //   port: 3000, // Your desired port
+  //   strictPort: true, // Prevent Vite from choosing another port if 3000 is busy
+  // },
 });
