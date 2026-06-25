@@ -130,6 +130,111 @@ function useStoredState<T>(key: string, initialValue: T) {
   return [value, setValue] as const;
 }
 
+function getUserSubscription(userId: string): "Annual" | "Monthly" {
+  return Number(userId) % 2 ? "Annual" : "Monthly";
+}
+
+function getPaginationRange(
+  page: number,
+  pageCount: number,
+): (number | "ellipsis")[] {
+  if (pageCount <= 7) {
+    return Array.from({ length: pageCount }, (_, index) => index + 1);
+  }
+  const items: (number | "ellipsis")[] = [1];
+  if (page > 3) items.push("ellipsis");
+  const start = Math.max(2, page - 1);
+  const end = Math.min(pageCount - 1, page + 1);
+  for (let i = start; i <= end; i += 1) items.push(i);
+  if (page < pageCount - 2) items.push("ellipsis");
+  if (pageCount > 1) items.push(pageCount);
+  return items;
+}
+
+function Pagination({
+  page,
+  pageCount,
+  totalItems,
+  pageSize,
+  onPageChange,
+}: {
+  page: number;
+  pageCount: number;
+  totalItems: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+}) {
+  if (totalItems <= pageSize) return null;
+  const range = getPaginationRange(page, pageCount);
+  const start = (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, totalItems);
+
+  return (
+    <div className="pagination">
+      <span className="pagination-info">
+        {start}–{end} of {totalItems}
+      </span>
+      <div className="pagination-controls">
+        <button
+          type="button"
+          className="pagination-btn"
+          aria-label="Previous page"
+          disabled={page === 1}
+          onClick={() => onPageChange(Math.max(1, page - 1))}
+        >
+          <ChevronLeft />
+        </button>
+        {range.map((item, index) =>
+          item === "ellipsis" ? (
+            <span key={`ellipsis-${index}`} className="pagination-ellipsis">
+              …
+            </span>
+          ) : (
+            <button
+              key={item}
+              type="button"
+              className={`pagination-btn ${page === item ? "current" : ""}`}
+              aria-label={`Page ${item}`}
+              aria-current={page === item ? "page" : undefined}
+              onClick={() => onPageChange(item)}
+            >
+              {item}
+            </button>
+          ),
+        )}
+        <button
+          type="button"
+          className="pagination-btn"
+          aria-label="Next page"
+          disabled={page === pageCount}
+          onClick={() => onPageChange(Math.min(pageCount, page + 1))}
+        >
+          <ChevronRight />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SettingsToast({
+  message,
+  onDismiss,
+}: {
+  message: string;
+  onDismiss: () => void;
+}) {
+  useEffect(() => {
+    const timeout = window.setTimeout(onDismiss, 3200);
+    return () => window.clearTimeout(timeout);
+  }, [message, onDismiss]);
+
+  return (
+    <p className="settings-toast" role="status">
+      {message}
+    </p>
+  );
+}
+
 function AppDataProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useStoredState("sizzl-profile", initialProfile);
   const [preferences, setPreferences] = useStoredState(
@@ -210,6 +315,13 @@ function Shell({ children }: { children: ReactNode }) {
   const [search, setSearch] = useState(searchParams.get("q") ?? "");
   const active = (to: string) =>
     to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
+  const searchPlaceholder = useMemo(() => {
+    if (location.pathname.startsWith("/meals")) return "Search meals...";
+    if (location.pathname.startsWith("/subscription")) return "Search plans...";
+    if (location.pathname.startsWith("/earnings")) return "Search earnings...";
+    if (location.pathname.startsWith("/users")) return "Search users...";
+    return "Search name";
+  }, [location.pathname]);
 
   useEffect(() => {
     setSidebarOpen(window.innerWidth > 900);
@@ -218,24 +330,29 @@ function Shell({ children }: { children: ReactNode }) {
   }, [location.pathname]);
 
   useEffect(() => {
+    if (!profileOpen && !notificationsOpen) return;
+    const closePopovers = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (
+        target.closest(".profile-button") ||
+        target.closest(".profile-popover") ||
+        target.closest(".icon-button") ||
+        target.closest(".notification-popover")
+      )
+        return;
+      setProfileOpen(false);
+      setNotificationsOpen(false);
+    };
+    document.addEventListener("mousedown", closePopovers);
+    return () => document.removeEventListener("mousedown", closePopovers);
+  }, [profileOpen, notificationsOpen]);
+
+  useEffect(() => {
     setSearch(searchParams.get("q") ?? "");
   }, [searchParams]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      if (search.trim()) {
-        const searchablePaths = ["/", "/users", "/meals", "/earnings"];
-        const currentPath = location.pathname.replace(/\/$/, "") || "/";
-        const isSearchable = searchablePaths.some((p) =>
-          p === "/" ? currentPath === "/" : currentPath.startsWith(p),
-        );
-        if (!isSearchable) {
-          navigate(`/users?q=${encodeURIComponent(search.trim())}`, {
-            replace: true,
-          });
-          return;
-        }
-      }
       const next = new URLSearchParams(searchParams);
       if (search.trim()) next.set("q", search.trim());
       else next.delete("q");
@@ -243,7 +360,7 @@ function Shell({ children }: { children: ReactNode }) {
         setSearchParams(next, { replace: true });
     }, 250);
     return () => window.clearTimeout(timeout);
-  }, [search, searchParams, setSearchParams, location.pathname, navigate]);
+  }, [search, searchParams, setSearchParams]);
 
   const clearSearch = () => {
     setSearch("");
@@ -302,7 +419,7 @@ function Shell({ children }: { children: ReactNode }) {
             <Search />
             <input
               aria-label="Search"
-              placeholder="Search name"
+              placeholder={searchPlaceholder}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               onKeyDown={(event) => {
@@ -374,7 +491,7 @@ function Shell({ children }: { children: ReactNode }) {
             </div>
           )}
         </header>
-        <main className="content">{children}</main>
+        <main className="content page-enter">{children}</main>
       </section>
     </div>
   );
@@ -724,7 +841,8 @@ function UserTable({ earnings = false }: { earnings?: boolean }) {
   const [searchParams] = useSearchParams();
   const query = (searchParams.get("q") ?? "").toLowerCase();
   const [page, setPage] = useState(1);
-  const [ascending, setAscending] = useState(false);
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+  const [nameOnly, setNameOnly] = useState(false);
   const [subscription, setSubscription] = useState<
     "All" | "Annual" | "Monthly"
   >("All");
@@ -732,16 +850,23 @@ function UserTable({ earnings = false }: { earnings?: boolean }) {
   const filteredUsers = useMemo(
     () =>
       users
-        .filter((user) => user.join(" ").toLowerCase().includes(query))
+        .filter((user) => {
+          if (!query) return true;
+          const target = nameOnly
+            ? user[1].toLowerCase()
+            : user.join(" ").toLowerCase();
+          return target.includes(query);
+        })
         .filter((user) => {
           if (subscription === "All") return true;
-          const userSubscription = Number(user[0]) % 2 ? "Annual" : "Monthly";
-          return userSubscription === subscription;
+          return getUserSubscription(user[0]) === subscription;
         })
         .sort((a, b) =>
-          ascending ? a[5].localeCompare(b[5]) : b[5].localeCompare(a[5]),
+          sortOrder === "asc"
+            ? a[5].localeCompare(b[5])
+            : b[5].localeCompare(a[5]),
         ),
-    [ascending, query, subscription],
+    [nameOnly, query, sortOrder, subscription],
   );
   const pageCount = Math.max(1, Math.ceil(filteredUsers.length / pageSize));
   const visibleUsers = filteredUsers.slice(
@@ -749,7 +874,7 @@ function UserTable({ earnings = false }: { earnings?: boolean }) {
     page * pageSize,
   );
 
-  useEffect(() => setPage(1), [query, subscription]);
+  useEffect(() => setPage(1), [query, subscription, nameOnly, sortOrder]);
 
   const cycleSubscription = () => {
     setSubscription((value) =>
@@ -764,22 +889,33 @@ function UserTable({ earnings = false }: { earnings?: boolean }) {
         <div className="filter-pills">
           <button
             type="button"
-            onClick={() =>
-              document
-                .querySelector<HTMLInputElement>('input[aria-label="Search"]')
-                ?.focus()
-            }
+            className={nameOnly ? "active" : ""}
+            onClick={() => setNameOnly((value) => !value)}
           >
             {earnings ? "User Name" : "Search Name"} <Search />
           </button>
-          <button type="button" onClick={() => setAscending((value) => !value)}>
+          <button
+            type="button"
+            className={sortOrder === "asc" ? "active" : ""}
+            onClick={() =>
+              setSortOrder((value) => (value === "desc" ? "asc" : "desc"))
+            }
+          >
             Joining Date <ChevronDown />
           </button>
-          <button type="button" onClick={cycleSubscription}>
+          <button
+            type="button"
+            className={subscription !== "All" ? "active" : ""}
+            onClick={cycleSubscription}
+          >
             {subscription === "All" ? "Subscription" : subscription}{" "}
             <ChevronDown />
           </button>
-          <button type="button" onClick={() => setAscending(false)}>
+          <button
+            type="button"
+            className={sortOrder === "desc" ? "active" : ""}
+            onClick={() => setSortOrder("desc")}
+          >
             Recent Created <ChevronDown />
           </button>
         </div>
@@ -822,7 +958,7 @@ function UserTable({ earnings = false }: { earnings?: boolean }) {
                 </div>
               </td>
               <td>{user[2]}</td>
-              <td>{earnings ? (i % 2 ? "Monthly" : "Annual") : user[3]}</td>
+              <td>{earnings ? getUserSubscription(user[0]) : user[3]}</td>
               <td>{earnings ? `$${[10.99, 29.99, 49.99][i % 3]}` : user[4]}</td>
               <td>
                 {user[5]}
@@ -849,31 +985,13 @@ function UserTable({ earnings = false }: { earnings?: boolean }) {
           )}
         </tbody>
       </table>
-      <div className="pagination">
-        <button
-          disabled={page === 1}
-          onClick={() => setPage((value) => Math.max(1, value - 1))}
-        >
-          <ChevronLeft />
-        </button>
-        {Array.from({ length: pageCount }, (_, index) => index + 1).map(
-          (number) => (
-            <button
-              key={number}
-              className={page === number ? "current" : ""}
-              onClick={() => setPage(number)}
-            >
-              {number}
-            </button>
-          ),
-        )}
-        <button
-          disabled={page === pageCount}
-          onClick={() => setPage((value) => Math.min(pageCount, value + 1))}
-        >
-          <ChevronRight />
-        </button>
-      </div>
+      <Pagination
+        page={page}
+        pageCount={pageCount}
+        totalItems={filteredUsers.length}
+        pageSize={pageSize}
+        onPageChange={setPage}
+      />
     </section>
   );
 }
@@ -1104,6 +1222,8 @@ function Meals() {
     price: "",
   });
   const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 6;
 
   const filteredMeals = mealRows.filter((meal) => {
     const matchesQuery = meal
@@ -1112,6 +1232,13 @@ function Meals() {
       .includes(query.toLowerCase());
     return matchesQuery && (category === "All" || meal[1] === category);
   });
+  const pageCount = Math.max(1, Math.ceil(filteredMeals.length / pageSize));
+  const visibleMeals = filteredMeals.slice(
+    (page - 1) * pageSize,
+    page * pageSize,
+  );
+
+  useEffect(() => setPage(1), [query, category]);
 
   const resetDraft = () => {
     setDraft({ name: "", type: "Dinner", duration: "", price: "" });
@@ -1173,6 +1300,7 @@ function Meals() {
         <label className="searchbox small">
           <Search />
           <input
+            aria-label="Search meals"
             value={query}
             onChange={(event) => updateSearch(event.target.value)}
             onKeyDown={(event) => event.key === "Escape" && updateSearch("")}
@@ -1229,7 +1357,7 @@ function Meals() {
             </tr>
           </thead>
           <tbody>
-            {filteredMeals.map((m) => (
+            {visibleMeals.map((m) => (
               <tr key={m[0]}>
                 {m.map((v, i) => (
                   <td key={i}>
@@ -1273,6 +1401,13 @@ function Meals() {
             )}
           </tbody>
         </table>
+        <Pagination
+          page={page}
+          pageCount={pageCount}
+          totalItems={filteredMeals.length}
+          pageSize={pageSize}
+          onPageChange={setPage}
+        />
       </section>
     </>
   );
@@ -1323,6 +1458,7 @@ function MealOptions() {
             <span key={x}>
               {x}
               <button
+                type="button"
                 aria-label={`Remove ${x}`}
                 onClick={() =>
                   setDiet((current) => current.filter((item) => item !== x))
@@ -1349,6 +1485,7 @@ function MealOptions() {
             <span key={x}>
               {x}
               <button
+                type="button"
                 aria-label={`Remove ${x}`}
                 onClick={() =>
                   setCuisine((current) => current.filter((item) => item !== x))
@@ -1472,7 +1609,15 @@ function PlanCard({
 }
 
 function SubscriptionPlans() {
+  const [searchParams] = useSearchParams();
+  const query = (searchParams.get("q") ?? "").toLowerCase();
   const [plans, setPlans] = useStoredState("sizzl-plans", initialPlans);
+  const filteredPlans = plans.filter((plan) =>
+    [plan.name, plan.description, ...plan.features]
+      .join(" ")
+      .toLowerCase()
+      .includes(query),
+  );
   return (
     <>
       <PageHeading
@@ -1485,7 +1630,7 @@ function SubscriptionPlans() {
       />
       <p className="subtitle">Manage your Subscription.</p>
       <div className="plans-grid">
-        {plans.map((plan) => (
+        {filteredPlans.map((plan) => (
           <PlanCard
             key={plan.id}
             plan={plan}
@@ -1496,7 +1641,11 @@ function SubscriptionPlans() {
             }
           />
         ))}
-        {!plans.length && <EmptyState label="No subscription plans" />}
+        {!filteredPlans.length && (
+          <EmptyState
+            label={query ? "No plans match your search" : "No subscription plans"}
+          />
+        )}
       </div>
     </>
   );
@@ -1517,18 +1666,18 @@ function SubscriptionForm({ edit = false }: { edit?: boolean }) {
   const [description, setDescription] = useState(existing?.description ?? "");
   const [featureDraft, setFeatureDraft] = useState("");
   const [planFeatures, setPlanFeatures] = useState(existing?.features ?? []);
-  // const addFeature = () => {
-  //   const value = featureDraft.trim();
-  //   if (
-  //     !value ||
-  //     planFeatures.some(
-  //       (feature) => feature.toLowerCase() === value.toLowerCase(),
-  //     )
-  //   )
-  //     return;
-  //   setPlanFeatures((current) => [...current, value]);
-  //   setFeatureDraft("");
-  // };
+  const addFeature = (value: string) => {
+    const trimmed = value.trim();
+    if (
+      !trimmed ||
+      planFeatures.some(
+        (feature) => feature.toLowerCase() === trimmed.toLowerCase(),
+      )
+    )
+      return;
+    setPlanFeatures((current) => [...current, trimmed]);
+    setFeatureDraft("");
+  };
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     const normalizedPrice = price.replace(/^\$/, "").trim();
@@ -1596,11 +1745,17 @@ function SubscriptionForm({ edit = false }: { edit?: boolean }) {
           Features
           <select
             value={featureDraft}
-            onChange={(event) => setFeatureDraft(event.target.value)}
+            onChange={(event) => {
+              const value = event.target.value;
+              setFeatureDraft(value);
+              if (value) addFeature(value);
+            }}
           >
             <option value="">Select feature</option>
             {features.map((feature) => (
-              <option key={feature}>{feature}</option>
+              <option key={feature} value={feature}>
+                {feature}
+              </option>
             ))}
           </select>
         </label>
@@ -1768,6 +1923,10 @@ function BasicSettingsForm({
 }) {
   const navigate = useNavigate();
   const { profile, setProfile, preferences, setPreferences } = useAppData();
+  const [storedPassword, setStoredPassword] = useStoredState(
+    "sizzl-password",
+    "",
+  );
   const [profileDraft, setProfileDraft] = useState(profile);
   const [language, setLanguage] = useState(preferences.language);
   const [timezone, setTimezone] = useState(preferences.timezone);
@@ -1777,17 +1936,25 @@ function BasicSettingsForm({
     confirm: "",
   });
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     setError("");
+    setSuccess("");
     if (type === "profile") {
       setProfile(profileDraft);
+      setSuccess("Profile updated successfully.");
     }
     if (type === "language") {
       setPreferences((current) => ({ ...current, language, timezone }));
+      setSuccess("Language settings saved successfully.");
     }
     if (type === "password") {
+      if (storedPassword && passwords.current !== storedPassword) {
+        setError("Current password is incorrect.");
+        return;
+      }
       if (passwords.next.length < 8) {
         setError("New password must be at least 8 characters.");
         return;
@@ -1796,9 +1963,11 @@ function BasicSettingsForm({
         setError("New passwords do not match.");
         return;
       }
+      setStoredPassword(passwords.next);
+      setPasswords({ current: "", next: "", confirm: "" });
+      setSuccess("Password updated successfully.");
     }
-    alert("Changes saved successfully.");
-    navigate("/settings");
+    window.setTimeout(() => navigate("/settings"), 900);
   };
   return (
     <SettingsLayout>
@@ -1810,6 +1979,9 @@ function BasicSettingsForm({
               ? "Change Password"
               : "Change Language"}
         </h3>
+        {success && (
+          <SettingsToast message={success} onDismiss={() => setSuccess("")} />
+        )}
         {type === "profile" && (
           <>
             <label>
@@ -1984,18 +2156,22 @@ function NotificationSettings() {
   const navigate = useNavigate();
   const { preferences, setPreferences } = useAppData();
   const [notifications, setNotifications] = useState(preferences.notifications);
+  const [success, setSuccess] = useState("");
   const toggle = (index: number) =>
     setNotifications((current) =>
       current.map((value, itemIndex) => (itemIndex === index ? !value : value)),
     );
   const handleSave = () => {
     setPreferences((current) => ({ ...current, notifications }));
-    alert("Notification settings saved successfully.");
-    navigate("/settings");
+    setSuccess("Notification settings saved successfully.");
+    window.setTimeout(() => navigate("/settings"), 900);
   };
   return (
     <SettingsLayout>
       <section className="notification-card">
+        {success && (
+          <SettingsToast message={success} onDismiss={() => setSuccess("")} />
+        )}
         <div>
           <h3>Security Notification</h3>
           <p>Receive emails about your account security.</p>
@@ -2052,19 +2228,23 @@ function TextSettings({
   const copy = initialPageCopy[kind];
   const currentValue = kind === "privacy" ? privacy : about;
   const [val, setVal] = useState(currentValue);
+  const [success, setSuccess] = useState("");
 
   const handleUpdate = () => {
     if (!val.trim()) return;
     if (kind === "privacy") setPrivacy(val.trim());
     else setAbout(val.trim());
-    alert(`${copy.title} updated successfully.`);
-    navigate(`/settings/${kind}`);
+    setSuccess(`${copy.title} updated successfully.`);
+    window.setTimeout(() => navigate(`/settings/${kind}`), 900);
   };
 
   return (
     <SettingsLayout>
       <section className={`text-settings ${edit ? "editing" : ""}`}>
         <h3>{edit ? `Edit ${copy.title}` : copy.title}</h3>
+        {success && (
+          <SettingsToast message={success} onDismiss={() => setSuccess("")} />
+        )}
         <div className="editor-bar">
           {edit && (
             <>
@@ -2105,6 +2285,7 @@ function ContactSettings({ edit = false }: { edit?: boolean }) {
   const [email, setEmail] = useState(contact.email);
   const [phone, setPhone] = useState(contact.phone);
   const [address, setAddress] = useState(contact.address);
+  const [success, setSuccess] = useState("");
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -2114,14 +2295,17 @@ function ContactSettings({ edit = false }: { edit?: boolean }) {
       phone: phone.trim(),
       address: address.trim(),
     }));
-    alert("Contact settings saved successfully.");
-    navigate("/settings/contact");
+    setSuccess("Contact settings saved successfully.");
+    window.setTimeout(() => navigate("/settings/contact"), 900);
   };
 
   return (
     <SettingsLayout>
       <section className="contact-card">
         <h3>{edit ? "Edit Contact Info" : "Contact Us"}</h3>
+        {success && (
+          <SettingsToast message={success} onDismiss={() => setSuccess("")} />
+        )}
         {edit ? (
           <form onSubmit={handleSubmit}>
             <label>
