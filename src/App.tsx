@@ -144,26 +144,7 @@ function Shell({ children }: { children: ReactNode }) {
           >
             <Menu />
           </button>
-          <label className="searchbox">
-            <Search />
-            <input
-              aria-label="Search"
-              placeholder="Search name"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Escape') clearSearch()
-                if (event.key === 'Enter') {
-                  event.preventDefault()
-                  const next = new URLSearchParams(searchParams)
-                  if (search.trim()) next.set('q', search.trim())
-                  else next.delete('q')
-                  setSearchParams(next, { replace: true })
-                }
-              }}
-            />
-            {search && <button type="button" className="search-clear" aria-label="Clear search" onClick={clearSearch}><X /></button>}
-          </label>
+    
           <div className="top-actions">
             <button className="icon-button" onClick={() => setNotificationsOpen((v) => !v)}><Bell /></button>
             <button className="profile-button" onClick={() => setProfileOpen((v) => !v)}>
