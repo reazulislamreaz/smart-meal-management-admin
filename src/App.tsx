@@ -1,4 +1,12 @@
-import { useState, type ReactNode } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type Dispatch,
+  type FormEvent,
+  type ReactNode,
+  type SetStateAction,
+} from 'react'
 import {
   ArrowLeft,
   Bell,
@@ -19,8 +27,18 @@ import {
   Trash2,
   UsersRound,
   Utensils,
+  X,
 } from 'lucide-react'
-import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import {
+  BrowserRouter,
+  Link,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from 'react-router-dom'
 import notificationArt from '@/assets/hero.png'
 
 const avatars = [
@@ -44,14 +62,55 @@ const nav = [
 
 function Shell({ children }: { children: ReactNode }) {
   const location = useLocation()
+  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [search, setSearch] = useState(searchParams.get('q') ?? '')
   const active = (to: string) =>
     to === '/' ? location.pathname === '/' : location.pathname.startsWith(to)
 
+  useEffect(() => {
+    setSidebarOpen(false)
+    setProfileOpen(false)
+    setNotificationsOpen(false)
+  }, [location.pathname])
+
+  useEffect(() => {
+    setSearch(searchParams.get('q') ?? '')
+  }, [searchParams])
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      const next = new URLSearchParams(searchParams)
+      if (search.trim()) next.set('q', search.trim())
+      else next.delete('q')
+      if (next.toString() !== searchParams.toString()) setSearchParams(next, { replace: true })
+    }, 250)
+    return () => window.clearTimeout(timeout)
+  }, [search, searchParams, setSearchParams])
+
+  const clearSearch = () => {
+    setSearch('')
+    const next = new URLSearchParams(searchParams)
+    next.delete('q')
+    setSearchParams(next, { replace: true })
+  }
+
+  const logout = () => {
+    setProfileOpen(false)
+    navigate('/')
+  }
+
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
+    <div className={`app-shell ${sidebarOpen ? 'sidebar-open' : ''}`}>
+      <button
+        className="sidebar-backdrop"
+        aria-label="Close navigation"
+        onClick={() => setSidebarOpen(false)}
+      />
+      <aside className="sidebar" aria-label="Main navigation">
         <Link to="/" className="logo">sizzl<span>.</span></Link>
         <nav className="nav-list">
           {nav.map((item) => (
@@ -60,16 +119,39 @@ function Shell({ children }: { children: ReactNode }) {
               <span>{item.label}</span>
             </Link>
           ))}
-          <button className="nav-item logout"><LogOut /><span>Logout</span></button>
+          <button className="nav-item logout" onClick={logout}><LogOut /><span>Logout</span></button>
         </nav>
       </aside>
 
       <section className="workspace">
         <header className="topbar">
-          <button className="menu-button"><Menu /></button>
+          <button
+            className="menu-button"
+            aria-label={sidebarOpen ? 'Close navigation' : 'Open navigation'}
+            aria-expanded={sidebarOpen}
+            onClick={() => setSidebarOpen((value) => !value)}
+          >
+            <Menu />
+          </button>
           <label className="searchbox">
             <Search />
-            <input placeholder="Search name" />
+            <input
+              aria-label="Search"
+              placeholder="Search name"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') clearSearch()
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  const next = new URLSearchParams(searchParams)
+                  if (search.trim()) next.set('q', search.trim())
+                  else next.delete('q')
+                  setSearchParams(next, { replace: true })
+                }
+              }}
+            />
+            {search && <button type="button" className="search-clear" aria-label="Clear search" onClick={clearSearch}><X /></button>}
           </label>
           <div className="top-actions">
             <button className="icon-button" onClick={() => setNotificationsOpen((v) => !v)}><Bell /></button>
@@ -83,7 +165,7 @@ function Shell({ children }: { children: ReactNode }) {
             <div className="profile-popover">
               <strong>Bashar Islam</strong>
               <span>bashar@gmail.com</span>
-              <button><LogOut /> Logout</button>
+              <button onClick={logout}><LogOut /> Logout</button>
             </div>
           )}
           {notificationsOpen && (
@@ -164,38 +246,50 @@ function Dashboard() {
 }
 
 function DashboardList() {
+  const [searchParams] = useSearchParams()
+  const query = (searchParams.get('q') ?? '').toLowerCase()
   const rows = [
     ['Michael Rahman', 'Annual'], ['Philips Mark', 'Monthly'], ['James Dekker', 'Trial'],
     ['Eliza H.', 'Annual'], ['Marco Williams', 'Monthly'],
-  ]
+  ].filter((row) => row.join(' ').toLowerCase().includes(query))
   return (
     <section className="panel compact-list">
       <h3>Recent Users</h3>
-      {rows.map((row, i) => (
+      {rows.length ? rows.map((row, i) => (
         <div className="person-row" key={row[0]}>
           <img src={avatars[i + 1]} alt="" /><span>{row[0]}</span><small>{row[1]}</small>
         </div>
-      ))}
+      )) : <EmptyState />}
     </section>
   )
 }
 
 function TopMeals() {
+  const [searchParams] = useSearchParams()
+  const query = (searchParams.get('q') ?? '').toLowerCase()
+  const filteredMeals = meals.slice(0, 5).filter((meal) => meal.join(' ').toLowerCase().includes(query))
   return (
     <section className="panel compact-list">
       <h3>Top Meals</h3>
-      {meals.slice(0, 5).map((meal) => (
+      {filteredMeals.length ? filteredMeals.map((meal) => (
         <div className="meal-row" key={meal[0]}><span>–</span><strong>{meal[0]}</strong><small>{meal[4]}</small></div>
-      ))}
+      )) : <EmptyState />}
     </section>
   )
 }
 
+function EmptyState({ label = 'No results found' }: { label?: string }) {
+  return <div className="empty-state">{label}</div>
+}
+
 function BarChart({ title = 'User ratio' }: { title?: string }) {
-  const bars = [46, 58, 86, 61, 45, 61, 34, 43, 55, 71, 36, 53]
+  const [period, setPeriod] = useState<'monthly' | 'annually'>('annually')
+  const bars = period === 'annually'
+    ? [46, 58, 86, 61, 45, 61, 34, 43, 55, 71, 36, 53]
+    : [40, 53, 72, 56, 63, 48, 67, 58, 45, 64, 51, 69]
   return (
     <section className="chart-card">
-      <div className="chart-head"><h3>{title}</h3><div><button>Monthly</button><button className="selected">Annually</button></div></div>
+      <div className="chart-head"><h3>{title}</h3><div><button className={period === 'monthly' ? 'selected' : ''} onClick={() => setPeriod('monthly')}>Monthly</button><button className={period === 'annually' ? 'selected' : ''} onClick={() => setPeriod('annually')}>Annually</button></div></div>
       <div className="chart">
         <div className="y-labels"><span>250</span><span>200</span><span>150</span><span>100</span><span>50</span><span>0</span></div>
         <div className="bars">
@@ -222,16 +316,29 @@ const users = [
 ]
 
 function UserTable({ earnings = false }: { earnings?: boolean }) {
+  const [searchParams] = useSearchParams()
+  const query = (searchParams.get('q') ?? '').toLowerCase()
+  const [page, setPage] = useState(1)
+  const [ascending, setAscending] = useState(false)
+  const pageSize = 4
+  const filteredUsers = useMemo(() => users
+    .filter((user) => user.join(' ').toLowerCase().includes(query))
+    .sort((a, b) => ascending ? a[5].localeCompare(b[5]) : b[5].localeCompare(a[5])), [ascending, query])
+  const pageCount = Math.max(1, Math.ceil(filteredUsers.length / pageSize))
+  const visibleUsers = filteredUsers.slice((page - 1) * pageSize, page * pageSize)
+
+  useEffect(() => setPage(1), [query])
+
   return (
     <section className="table-panel">
       <div className="table-toolbar">
         <h3>{earnings ? 'All Earning list' : 'All Users list'}</h3>
-        <div className="filter-pills"><button>{earnings ? 'User Name' : 'Search Name'} <Search /></button><button>Joining Date <ChevronDown /></button><button>Subscription <ChevronDown /></button><button>Recent Created <ChevronDown /></button></div>
+        <div className="filter-pills"><button type="button">{earnings ? 'User Name' : 'Search Name'} <Search /></button><button type="button" onClick={() => setAscending((value) => !value)}>Joining Date <ChevronDown /></button><button type="button">Subscription <ChevronDown /></button><button type="button" onClick={() => setAscending((value) => !value)}>Recent Created <ChevronDown /></button></div>
       </div>
       <table>
         <thead><tr>{(earnings ? ['Sl','User Image','Email','Subscription Type','Price','Expire Date','Action'] : ['Sl','User Name','Email','Phone Number','Address','Joining Date','Action']).map((h) => <th key={h}>{h}</th>)}</tr></thead>
         <tbody>
-          {users.map((user, i) => (
+          {visibleUsers.map((user, i) => (
             <tr key={user[0]}>
               <td>{user[0]}</td>
               <td><div className="user-cell"><img src={avatars[i]} alt="" /><strong>{earnings ? user[1].split(' ')[0] : user[1]}</strong></div></td>
@@ -242,9 +349,16 @@ function UserTable({ earnings = false }: { earnings?: boolean }) {
               <td><Link className="row-action" to={earnings ? '/earnings/1' : '/users/1'}><Eye /></Link></td>
             </tr>
           ))}
+          {!visibleUsers.length && <tr><td colSpan={7}><EmptyState /></td></tr>}
         </tbody>
       </table>
-      <div className="pagination"><ChevronLeft /><b>1</b><span>2</span><span>3</span><span>...</span><ChevronRight /></div>
+      <div className="pagination">
+        <button disabled={page === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}><ChevronLeft /></button>
+        {Array.from({ length: pageCount }, (_, index) => index + 1).map((number) => (
+          <button key={number} className={page === number ? 'current' : ''} onClick={() => setPage(number)}>{number}</button>
+        ))}
+        <button disabled={page === pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))}><ChevronRight /></button>
+      </div>
     </section>
   )
 }
@@ -254,12 +368,13 @@ function Users() {
 }
 
 function DetailCard({ earnings = false }: { earnings?: boolean }) {
+  const [blocked, setBlocked] = useState(false)
   return (
     <div className="details-wrap">
       <Link to={earnings ? '/earnings' : '/users'} className="back"><ArrowLeft /> User Details</Link>
       <div className="identity-card">
         <div className="identity"><img src={avatars[earnings ? 3 : 0]} alt="" /><div><strong>{earnings ? 'Alex T' : 'Bashar Islam'}</strong><span>{earnings ? '' : 'Member'}</span></div></div>
-        {!earnings && <button className="danger-pill">Block User</button>}
+        {!earnings && <button className="danger-pill" onClick={() => setBlocked((value) => !value)}>{blocked ? 'Unblock User' : 'Block User'}</button>}
       </div>
       {earnings ? (
         <section className="info-card">
@@ -291,35 +406,101 @@ function DetailCard({ earnings = false }: { earnings?: boolean }) {
   )
 }
 
-function MealForm() {
+type MealDraft = { name: string; type: string; duration: string; price: string }
+
+function MealForm({
+  draft,
+  editing,
+  error,
+  onChange,
+  onSubmit,
+  onCancel,
+}: {
+  draft: MealDraft
+  editing: boolean
+  error: string
+  onChange: (field: keyof MealDraft, value: string) => void
+  onSubmit: (event: FormEvent) => void
+  onCancel: () => void
+}) {
   return (
-    <section className="meal-form panel">
+    <form className="meal-form panel" onSubmit={onSubmit}>
       <div className="meal-form-top">
-        <label className="searchbox small"><Search /><input placeholder="Search meals..." /></label>
-        <div className="meal-tabs"><button className="active">All</button><button>Breakfast</button><button>Lunch</button><button>Dinner</button></div>
         <Link to="/meal-options" className="dark-button">+ Add Content</Link>
-        <button className="dark-button">+ Add Meal</button>
+        <button type="button" className="dark-button" onClick={() => document.querySelector<HTMLInputElement>('#meal-name')?.focus()}>+ Add Meal</button>
       </div>
-      <h3>Add new meal</h3>
+      <h3>{editing ? 'Edit meal' : 'Add new meal'}</h3>
       <div className="meal-inputs">
-        <label>Name<input placeholder="e.g. Shakshuka" /></label>
-        <label>Type<select><option>Dinner</option></select></label>
-        <label>Duration<input placeholder="25m" /></label>
-        <label>Price<input placeholder="e.g. $5.50" /></label>
+        <label>Name<input id="meal-name" value={draft.name} onChange={(event) => onChange('name', event.target.value)} placeholder="e.g. Shakshuka" required /></label>
+        <label>Type<select value={draft.type} onChange={(event) => onChange('type', event.target.value)}><option>Dinner</option><option>Lunch</option><option>Breakfast</option></select></label>
+        <label>Duration<input value={draft.duration} onChange={(event) => onChange('duration', event.target.value)} placeholder="25m" required /></label>
+        <label>Price<input value={draft.price} onChange={(event) => onChange('price', event.target.value)} placeholder="e.g. $5.50" required /></label>
       </div>
-      <button className="dark-button">Save meal</button>
-    </section>
+      {error && <p className="form-message error" role="alert">{error}</p>}
+      <div className="form-actions"><button className="dark-button" type="submit">{editing ? 'Update meal' : 'Save meal'}</button>{editing && <button className="outline-button" type="button" onClick={onCancel}>Cancel</button>}</div>
+    </form>
   )
 }
 
 function Meals() {
+  const [searchParams] = useSearchParams()
+  const globalQuery = searchParams.get('q') ?? ''
+  const [mealRows, setMealRows] = useState(() => meals.map((meal) => [...meal]))
+  const [query, setQuery] = useState(globalQuery)
+  const [category, setCategory] = useState('All')
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
+  const [draft, setDraft] = useState<MealDraft>({ name: '', type: 'Dinner', duration: '', price: '' })
+  const [error, setError] = useState('')
+
+  useEffect(() => setQuery(globalQuery), [globalQuery])
+
+  const filteredMeals = mealRows.filter((meal) => {
+    const matchesQuery = meal.join(' ').toLowerCase().includes(query.toLowerCase())
+    return matchesQuery && (category === 'All' || meal[1] === category)
+  })
+
+  const resetDraft = () => {
+    setDraft({ name: '', type: 'Dinner', duration: '', price: '' })
+    setEditingIndex(null)
+    setError('')
+  }
+
+  const saveMeal = (event: FormEvent) => {
+    event.preventDefault()
+    if (!draft.name.trim() || !draft.duration.trim() || !/^\$?\d+(\.\d{1,2})?$/.test(draft.price.trim())) {
+      setError('Enter a meal name, duration, and a valid price.')
+      return
+    }
+    const price = draft.price.startsWith('$') ? draft.price : `$${draft.price}`
+    const row = [draft.name.trim(), draft.type, 'American', draft.duration.trim(), price, 'ACTIVE', '18 - 45']
+    setMealRows((current) => editingIndex === null
+      ? [row, ...current]
+      : current.map((meal, index) => index === editingIndex ? row : meal))
+    resetDraft()
+  }
+
+  const editMeal = (meal: string[]) => {
+    const index = mealRows.indexOf(meal)
+    setEditingIndex(index)
+    setDraft({ name: meal[0], type: meal[1], duration: meal[3], price: meal[4] })
+    setError('')
+    document.querySelector<HTMLInputElement>('#meal-name')?.focus()
+  }
+
   return (
     <>
-      <MealForm />
+      <section className="meal-search-row">
+        <label className="searchbox small"><Search /><input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === 'Escape' && setQuery('')} placeholder="Search meals..." />{query && <button className="search-clear" onClick={() => setQuery('')} type="button"><X /></button>}</label>
+        <div className="meal-tabs">{['All','Breakfast','Lunch','Dinner'].map((tab) => <button key={tab} className={category === tab ? 'active' : ''} onClick={() => setCategory(tab)}>{tab}</button>)}</div>
+      </section>
+      <MealForm draft={draft} editing={editingIndex !== null} error={error} onChange={(field, value) => setDraft((current) => ({ ...current, [field]: value }))} onSubmit={saveMeal} onCancel={resetDraft} />
       <section className="table-panel meal-table">
         <table>
           <thead><tr>{['MEAL','TYPE','CUISINE','TIME','ESTIMATE','STATUS','AGE',''].map((h) => <th key={h}>{h}</th>)}</tr></thead>
-          <tbody>{meals.map((m) => <tr key={m[0]}>{m.map((v,i) => <td key={i}>{i === 5 ? <span className={`status ${v.toLowerCase()}`}>{v}</span> : i === 0 || i === 4 ? <strong>{v}</strong> : v}</td>)}<td><button className="tiny-action"><Pencil /></button><button className="tiny-action delete"><Trash2 /></button></td></tr>)}</tbody>
+          <tbody>
+            {filteredMeals.map((m) => <tr key={m[0]}>{m.map((v,i) => <td key={i}>{i === 5 ? <span className={`status ${v.toLowerCase()}`}>{v}</span> : i === 0 || i === 4 ? <strong>{v}</strong> : v}</td>)}<td><button aria-label={`Edit ${m[0]}`} className="tiny-action" onClick={() => editMeal(m)}><Pencil /></button><button aria-label={`Delete ${m[0]}`} className="tiny-action delete" onClick={() => setMealRows((current) => current.filter((meal) => meal !== m))}><Trash2 /></button></td></tr>)}
+            {!filteredMeals.length && <tr><td colSpan={8}><EmptyState label="No meals found" /></td></tr>}
+          </tbody>
         </table>
       </section>
     </>
@@ -327,12 +508,16 @@ function Meals() {
 }
 
 function MealOptions() {
-  const diet = ['Vegetarian','Vegan','Halal','Kosher','Gluten-free','Dairy-free','Nut-free','Pescatarian','High-protein']
-  const cuisine = ['Italian','Mexican','Asian','Mediterranean','American','Indian','Middle Eastern','British']
+  const [diet, setDiet] = useState(['Vegetarian','Vegan','Halal','Kosher','Gluten-free','Dairy-free','Nut-free','Pescatarian','High-protein'])
+  const [cuisine, setCuisine] = useState(['Italian','Mexican','Asian','Mediterranean','American','Indian','Middle Eastern','British'])
+  const addOption = (setter: Dispatch<SetStateAction<string[]>>) => {
+    const value = window.prompt('Enter option name')?.trim()
+    if (value) setter((current) => current.some((item) => item.toLowerCase() === value.toLowerCase()) ? current : [...current, value])
+  }
   return (
     <div className="options-page">
-      <section className="option-card"><div><h3>Dietary options</h3><button className="add pale-green"><Plus /> Add</button></div><div className="chips">{diet.map(x => <span key={x}>{x}<b>×</b></span>)}</div></section>
-      <section className="option-card"><div><h3>Cuisine types</h3><button className="add pale-blue"><Plus /> Add</button></div><div className="chips">{cuisine.map(x => <span key={x}>{x}<b>×</b></span>)}</div></section>
+      <section className="option-card"><div><h3>Dietary options</h3><button className="add pale-green" onClick={() => addOption(setDiet)}><Plus /> Add</button></div><div className="chips">{diet.map(x => <span key={x}>{x}<button aria-label={`Remove ${x}`} onClick={() => setDiet((current) => current.filter((item) => item !== x))}>×</button></span>)}</div></section>
+      <section className="option-card"><div><h3>Cuisine types</h3><button className="add pale-blue" onClick={() => addOption(setCuisine)}><Plus /> Add</button></div><div className="chips">{cuisine.map(x => <span key={x}>{x}<button aria-label={`Remove ${x}`} onClick={() => setCuisine((current) => current.filter((item) => item !== x))}>×</button></span>)}</div></section>
     </div>
   )
 }
@@ -353,14 +538,14 @@ function SubscriptionOverview() {
 }
 
 const features = ['Unlimited meal plans','Nutrition tracking','Advanced analytics','Priority support']
-function PlanCard({ premium = false }: { premium?: boolean }) {
+function PlanCard({ premium = false, onDelete }: { premium?: boolean; onDelete: () => void }) {
   return (
     <div className="plan-card">
       <div className="plan-head"><span>{premium ? 'Premium Plan' : 'Basic Plan'}</span><p>{premium ? 'Best for growing health programs' : 'Everything you need to get started'}</p></div>
       <div className="plan-body">
         <strong>${premium ? '29.99' : '9.99'}<small>/Month</small></strong>
         <p>Every Monthly Billing</p>
-        <div className="plan-actions"><Link to="/subscription/edit">Edit</Link><button className="remove">Delete</button></div>
+        <div className="plan-actions"><Link to="/subscription/edit">Edit</Link><button className="remove" onClick={onDelete}>Delete</button></div>
         <h4>Features</h4>
         <ul>{features.map((f) => <li key={f}>✓ {f}</li>)}</ul>
       </div>
@@ -369,11 +554,16 @@ function PlanCard({ premium = false }: { premium?: boolean }) {
 }
 
 function SubscriptionPlans() {
+  const [plans, setPlans] = useState(['basic', 'premium'])
   return (
     <>
       <PageHeading title="Subscription" action={<Link to="/subscription/create" className="dark-button">Create Subscription</Link>} />
       <p className="subtitle">Manage your Subscription.</p>
-      <div className="plans-grid"><PlanCard /><PlanCard premium /></div>
+      <div className="plans-grid">
+        {plans.includes('basic') && <PlanCard onDelete={() => setPlans((current) => current.filter((plan) => plan !== 'basic'))} />}
+        {plans.includes('premium') && <PlanCard premium onDelete={() => setPlans((current) => current.filter((plan) => plan !== 'premium'))} />}
+        {!plans.length && <EmptyState label="No subscription plans" />}
+      </div>
     </>
   )
 }
