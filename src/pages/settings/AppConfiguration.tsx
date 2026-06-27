@@ -11,17 +11,22 @@ export function AppConfiguration() {
   const [editingBanner, setEditingBanner] = useState<string | null>(null);
   const [bannerValue, setBannerValue] = useState("");
   const [success, setSuccess] = useState("");
+  const [confirmReset, setConfirmReset] = useState(false);
 
   useEffect(() => {
     setDraftConfig(appConfig);
   }, [appConfig]);
 
   const handleReset = () => {
-    if (window.confirm("Reset all settings to default values?")) {
-      setDraftConfig(defaultAppConfig);
-      setAppConfig(defaultAppConfig);
-      setSuccess("Configurations reset to default values.");
-    }
+    setSuccess("");
+    setConfirmReset(true);
+  };
+
+  const confirmResetDefaults = () => {
+    setDraftConfig(defaultAppConfig);
+    setAppConfig(defaultAppConfig);
+    setConfirmReset(false);
+    setSuccess("Configurations reset to default values.");
   };
 
   const handleSave = () => {
@@ -83,6 +88,32 @@ export function AppConfiguration() {
       <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
         {success && (
           <SettingsToast message={success} onDismiss={() => setSuccess("")} />
+        )}
+
+        {confirmReset && (
+          <div
+            role="alertdialog"
+            aria-label="Reset all settings"
+            className="flex items-center justify-between gap-3 m-0 px-3 py-[10px] rounded-[4px] text-[#8a5400] bg-[#fff5db] border border-[#f3e2a8] text-[11px] leading-[1.4] animate-[fadeIn_.2s_ease]"
+          >
+            <span>Reset all settings to default values?</span>
+            <span className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setConfirmReset(false)}
+                className="border border-[#e3d8ad] bg-white rounded-[4px] px-[10px] py-[4px] text-[11px] font-medium text-[#6b5a23]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmResetDefaults}
+                className="border-0 bg-[#d98c00] text-white rounded-[4px] px-[10px] py-[4px] text-[11px] font-medium"
+              >
+                Reset
+              </button>
+            </span>
+          </div>
         )}
 
         {/* App Configuration Card */}
