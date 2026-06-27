@@ -74,9 +74,9 @@
 .topbar { height: 55px; display: flex; align-items: center; gap: 14px; padding: 0 20px; background: #f1f2f4; border-bottom: 1px solid #d8dade; position: relative; }
 .menu-button, .icon-button { width: 31px; height: 31px; border: 0; border-radius: 4px; display: grid; place-items: center; color: #fff; background: #17181a; }
 .menu-button svg, .icon-button svg { width: 15px; height: 15px; }
-.searchbox { display: flex; align-items: center; gap: 8px; height: 31px; width: min(480px, 44vw); min-width: 100px; border: 1px solid #bfc3ca; border-radius: 5px; padding: 0 10px; background: #f7f8fa; }
-.searchbox svg { width: 13px; color: #686c72; }
-.searchbox input { flex: 1; width: 0; border: 0; outline: 0; background: transparent; color: #333; font-size: 12px; }
+.searchbox { display: flex; flex-direction: row; align-items: center; gap: 8px; height: 31px; width: min(480px, 44vw); min-width: 100px; border: 1px solid #bfc3ca; border-radius: 5px; padding: 0 10px; background: #f7f8fa; }
+.searchbox svg { width: 13px; flex-shrink: 0; color: #686c72; }
+.searchbox input { flex: 1; min-width: 0; width: 0; height: 100%; border: 0; outline: 0; padding: 0; background: transparent; color: #333; font-size: 12px; }
 .searchbox input::placeholder { color: #686c72; }
 .search-clear { display: grid; place-items: center; width: 18px; height: 18px; border: 0; border-radius: 50%; background: transparent; color: #686c72; padding: 0; flex-shrink: 0; transition: color .15s ease, background .15s ease; }
 .search-clear svg { width: 11px; height: 11px; }
