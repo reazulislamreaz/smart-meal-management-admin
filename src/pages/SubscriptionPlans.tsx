@@ -39,7 +39,9 @@ export function SubscriptionPlans() {
           </Link>
         }
       />
-      <p className="subtitle">Manage your Subscription.</p>
+      <p className="m-0 mb-[18px] text-[#71757b] text-[16px]">
+        Manage your Subscription.
+      </p>
 
       {success && (
         <div style={{ marginBottom: "15px" }}>
@@ -47,7 +49,7 @@ export function SubscriptionPlans() {
         </div>
       )}
 
-      <div className="plans-grid">
+      <div className="grid grid-cols-[repeat(2,minmax(0,360px))] gap-[18px] mt-[18px] max-[900px]:grid-cols-1">
         {filteredPlans.map((plan) => (
           <PlanCard
             key={plan.id}

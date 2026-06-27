@@ -94,7 +94,7 @@ export function BasicSettingsForm({
   return (
     <SettingsLayout>
       <form
-        className="form-card settings-form"
+        className="bg-white border border-[#e5e7ea] rounded-[7px] p-[18px] flex flex-col gap-[10px] max-[420px]:p-[14px] [&_input]:h-[34px] [&_select]:h-[34px]"
         onSubmit={handleSubmit}
         style={{ maxWidth: "430px", padding: "20px" }}
       >
@@ -284,7 +284,7 @@ export function BasicSettingsForm({
 
         {error && (
           <p
-            className="form-message error"
+            className="m-0 text-[#ff5361] text-[11px] leading-[1.4]"
             role="alert"
             style={{ marginTop: "10px" }}
           >

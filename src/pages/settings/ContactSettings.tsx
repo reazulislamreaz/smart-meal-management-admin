@@ -48,7 +48,7 @@ export function ContactSettings() {
   return (
     <SettingsLayout>
       <section
-        className="contact-card"
+        className="bg-white border border-[#e5e7ea] rounded-[7px] max-w-[430px] p-[18px] max-[420px]:p-[14px]"
         style={{ padding: "20px", maxWidth: "430px" }}
       >
         {success && (

@@ -6,7 +6,9 @@ export function Earnings() {
   return (
     <>
       <PageHeading title="Earnings Overview" />
-      <p className="subtitle">Track your revenue, profits, and financial metrics</p>
+      <p className="m-0 mb-[18px] text-[#71757b] text-[16px]">
+        Track your revenue, profits, and financial metrics
+      </p>
       <BarChart title="Revenue Breakdown" />
       <EarningsTable />
     </>

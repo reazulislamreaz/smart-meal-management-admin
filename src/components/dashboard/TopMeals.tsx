@@ -9,14 +9,19 @@ export function TopMeals() {
     .slice(0, 5)
     .filter((meal) => meal.join(" ").toLowerCase().includes(query));
   return (
-    <section className="panel compact-list">
-      <h3>Top Meals</h3>
+    <section className="bg-white border border-[#e5e7ea] rounded-[7px] px-4 py-[14px]">
+      <h3 className="m-0 mb-[10px] text-[18px]">Top Meals</h3>
       {filteredMeals.length ? (
         filteredMeals.map((meal) => (
-          <div className="meal-row" key={meal[0]}>
+          <div
+            className="min-h-[34px] border-t border-[#edf0f2] flex items-center gap-[9px] text-[12px]"
+            key={meal[0]}
+          >
             <span>–</span>
-            <strong>{meal[0]}</strong>
-            <small>{meal[4]}</small>
+            <strong className="flex-1 font-medium flex flex-col gap-[2px]">
+              {meal[0]}
+            </strong>
+            <small className="text-[#555]">{meal[4]}</small>
           </div>
         ))
       ) : (

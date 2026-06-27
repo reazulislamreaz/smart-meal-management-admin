@@ -43,28 +43,33 @@ export function EarningsTable() {
     setSubscription((v) => (v === "All" ? "Annual" : v === "Annual" ? "Monthly" : "All"));
   };
 
+  const pillBase =
+    "flex items-center gap-[7px] border-0 rounded-[14px] px-[10px] py-[6px] text-[12px] transition-[background,box-shadow,color] duration-150 [&_svg]:w-[10px] [&_svg]:h-[10px]";
+  const pillIdle = "bg-white hover:bg-[#f7f8fa]";
+  const pillActive = "bg-[#17181a] text-white shadow-[0_1px_4px_rgba(23,24,26,.18)]";
+
   return (
-    <section className="table-panel">
-      <div className="table-toolbar">
-        <h3>All Earning list</h3>
-        <div className="filter-pills">
+    <section className="bg-white border border-[#e5e7ea] rounded-[7px] max-w-full mt-[15px] overflow-x-auto overflow-y-hidden">
+      <div className="min-h-[45px] px-[13px] flex items-center justify-between bg-[#f0f1f3] max-[900px]:min-w-[760px]">
+        <h3 className="m-0 text-[16px]">All Earning list</h3>
+        <div className="flex gap-[7px] max-[620px]:flex-nowrap">
           <button
             type="button"
-            className={sortOrder === "asc" ? "active" : ""}
+            className={`${pillBase} ${sortOrder === "asc" ? pillActive : pillIdle}`}
             onClick={() => setSortOrder((v) => (v === "desc" ? "asc" : "desc"))}
           >
             Joining Date <ChevronDown />
           </button>
           <button
             type="button"
-            className={subscription !== "All" ? "active" : ""}
+            className={`${pillBase} ${subscription !== "All" ? pillActive : pillIdle}`}
             onClick={cycleSubscription}
           >
             {subscription === "All" ? "Subscription" : subscription} <ChevronDown />
           </button>
           <button
             type="button"
-            className={sortOrder === "desc" ? "active" : ""}
+            className={`${pillBase} ${sortOrder === "desc" ? pillActive : pillIdle}`}
             onClick={() => setSortOrder("desc")}
           >
             Recent Created <ChevronDown />
@@ -84,9 +89,13 @@ export function EarningsTable() {
             <tr key={user[0]}>
               <td>{user[0]}</td>
               <td>
-                <div className="user-cell">
-                  <img src={avatars[i % avatars.length]} alt="" />
-                  <strong>{user[1].split(" ")[0]}</strong>
+                <div className="flex items-center gap-[7px]">
+                  <img
+                    src={avatars[i % avatars.length]}
+                    alt=""
+                    className="w-[22px] h-[22px] rounded-full object-cover"
+                  />
+                  <strong className="font-medium">{user[1].split(" ")[0]}</strong>
                 </div>
               </td>
               <td>{user[2]}</td>
@@ -100,7 +109,7 @@ export function EarningsTable() {
               <td>
                 <Link
                   aria-label={`View ${user[1]}`}
-                  className="row-action"
+                  className="grid place-items-center w-[22px] h-[22px] border border-[#d8dadd] rounded-full [&_svg]:w-[11px]"
                   to={`/earnings/${user[0]}`}
                 >
                   <Eye />

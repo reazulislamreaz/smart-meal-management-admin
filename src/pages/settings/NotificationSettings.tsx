@@ -31,14 +31,19 @@ export function NotificationSettings() {
 
   return (
     <SettingsLayout>
-      <form className="notification-card" onSubmit={handleSubmit}>
+      <form
+        className="bg-white border border-[#e5e7ea] rounded-[7px] grid grid-cols-[1fr_auto] items-center px-[18px] pt-2 pb-[17px] max-[420px]:px-[13px] [&_.dark-button]:mt-[14px] [&_.dark-button]:col-[1/-1] [&_.dark-button]:justify-self-end"
+        onSubmit={handleSubmit}
+      >
         {success && (
           <SettingsToast message={success} onDismiss={() => setSuccess("")} />
         )}
         {fields.map(([label]) => (
-          <div key={label}>
-            <h3>{label}</h3>
-            <p>You can change notifications here.</p>
+          <div className="border-b border-[#eceef0] py-[14px]" key={label}>
+            <h3 className="m-0 mb-1 text-[12px]">{label}</h3>
+            <p className="m-0 text-[#777] text-[16px]">
+              You can change notifications here.
+            </p>
           </div>
         ))}
         {fields.map(([, id], i) => (

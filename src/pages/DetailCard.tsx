@@ -25,13 +25,16 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
   const joiningDate = (user[5] ?? "").split("\n")[0];
 
   return (
-    <div className="details-wrap">
-      <Link to={earnings ? "/earnings" : "/users"} className="back">
+    <div className="max-w-[720px] mx-auto my-[10px] max-[620px]:w-full">
+      <Link
+        to={earnings ? "/earnings" : "/users"}
+        className="flex items-center gap-2 text-[16px] font-bold mb-6 [&_svg]:w-[18px] max-[620px]:text-[14px] max-[620px]:mb-[18px]"
+      >
         <ArrowLeft /> User Details
       </Link>
 
       {/* ── Identity card ───────────────────────────────────────────── */}
-      <div className="identity-card" style={{ flexDirection: "column", alignItems: "center", gap: "14px", padding: "28px 18px 22px" }}>
+      <div className="bg-white border border-[#e5e7ea] rounded-[7px] flex justify-between items-center px-[18px] py-[15px]" style={{ flexDirection: "column", alignItems: "center", gap: "14px", padding: "28px 18px 22px" }}>
         {/* Avatar */}
         <div style={{ position: "relative" }}>
           <img
@@ -103,52 +106,52 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
       </div>
 
       {/* ── Stats row ───────────────────────────────────────────────── */}
-      <div className="detail-stats" style={{ marginTop: "14px" }}>
-        <div>
-          <span>Active Meals</span>
-          <strong>10</strong>
+      <div className="grid grid-cols-2 gap-3 my-[14px] max-[420px]:grid-cols-1" style={{ marginTop: "14px" }}>
+        <div className="h-[75px] rounded-[6px] bg-white border border-[#e5e7ea] p-[13px] flex flex-col gap-[7px]">
+          <span className="text-[#666a70] text-[12px]">Active Meals</span>
+          <strong className="text-[20px]">10</strong>
         </div>
-        <div>
-          <span>Total Spend</span>
-          <strong>$5.00</strong>
+        <div className="h-[75px] rounded-[6px] bg-white border border-[#e5e7ea] p-[13px] flex flex-col gap-[7px]">
+          <span className="text-[#666a70] text-[12px]">Total Spend</span>
+          <strong className="text-[20px]">$5.00</strong>
         </div>
       </div>
 
       {/* ── User Information ────────────────────────────────────────── */}
       {!earnings ? (
-        <section className="info-card" style={{ marginTop: "14px" }}>
-          <h3>User Information</h3>
-          <div className="info-grid">
-            <div>
-              <span>Name</span>
-              <strong>{user[1]}</strong>
+        <section className="bg-white border border-[#e5e7ea] rounded-[7px] px-[18px] py-[15px]" style={{ marginTop: "14px" }}>
+          <h3 className="m-0 mb-4 text-[16px]">User Information</h3>
+          <div className="grid grid-cols-4 gap-5 max-[1100px]:grid-cols-2 max-[420px]:grid-cols-1">
+            <div className="flex flex-col gap-[5px] min-w-0">
+              <span className="text-[#666a70] text-[12px]">Name</span>
+              <strong className="text-[12px] wrap-anywhere">{user[1]}</strong>
             </div>
-            <div>
-              <span>Address</span>
-              <strong>{user[4]}</strong>
+            <div className="flex flex-col gap-[5px] min-w-0">
+              <span className="text-[#666a70] text-[12px]">Address</span>
+              <strong className="text-[12px] wrap-anywhere">{user[4]}</strong>
             </div>
-            <div>
-              <span>Email</span>
-              <strong>{user[2]}</strong>
+            <div className="flex flex-col gap-[5px] min-w-0">
+              <span className="text-[#666a70] text-[12px]">Email</span>
+              <strong className="text-[12px] wrap-anywhere">{user[2]}</strong>
             </div>
-            <div>
-              <span>Phone number</span>
-              <strong>{user[3]}</strong>
+            <div className="flex flex-col gap-[5px] min-w-0">
+              <span className="text-[#666a70] text-[12px]">Phone number</span>
+              <strong className="text-[12px] wrap-anywhere">{user[3]}</strong>
             </div>
-            <div>
-              <span>Joining Date</span>
-              <strong>{joiningDate}</strong>
+            <div className="flex flex-col gap-[5px] min-w-0">
+              <span className="text-[#666a70] text-[12px]">Joining Date</span>
+              <strong className="text-[12px] wrap-anywhere">{joiningDate}</strong>
             </div>
-            <div>
-              <span>Current plan</span>
-              <strong className="approved">Annual</strong>
+            <div className="flex flex-col gap-[5px] min-w-0">
+              <span className="text-[#666a70] text-[12px]">Current plan</span>
+              <strong className="text-[12px] wrap-anywhere approved">Annual</strong>
             </div>
           </div>
         </section>
       ) : (
-        <section className="info-card" style={{ marginTop: "14px" }}>
-          <h3>Subscription Buying Information</h3>
-          <div className="info-grid three">
+        <section className="bg-white border border-[#e5e7ea] rounded-[7px] px-[18px] py-[15px]" style={{ marginTop: "14px" }}>
+          <h3 className="m-0 mb-4 text-[16px]">Subscription Buying Information</h3>
+          <div className="grid grid-cols-3 gap-x-5 gap-y-6 max-[620px]:grid-cols-2 max-[420px]:grid-cols-1">
             {[
               ["Subscription Type", "Annual"],
               ["Buying date", "12/12/24"],
@@ -160,9 +163,9 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
               ["Card Type", "Visa/Pay"],
               ["Status", "Approved"],
             ].map(([a, b]) => (
-              <div key={a}>
-                <span>{a}</span>
-                <strong className={a === "Status" ? "approved" : ""}>{b}</strong>
+              <div className="flex flex-col gap-[5px] min-w-0" key={a}>
+                <span className="text-[#666a70] text-[12px]">{a}</span>
+                <strong className={`text-[12px] wrap-anywhere${a === "Status" ? " approved" : ""}`}>{b}</strong>
               </div>
             ))}
           </div>

@@ -87,7 +87,7 @@ export function AppConfiguration() {
 
         {/* App Configuration Card */}
         <section
-          className="panel"
+          className="bg-white border border-[#e5e7ea] rounded-[7px]"
           style={{ overflow: "hidden", borderRadius: "8px" }}
         >
           <div
@@ -282,7 +282,7 @@ export function AppConfiguration() {
 
         {/* In-app Banners & Copy Card */}
         <section
-          className="panel"
+          className="bg-white border border-[#e5e7ea] rounded-[7px]"
           style={{ overflow: "hidden", borderRadius: "8px" }}
         >
           <div

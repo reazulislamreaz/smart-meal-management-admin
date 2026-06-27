@@ -66,21 +66,34 @@ export function UserTable() {
     );
   };
 
+  // ─── Shared class strings ────────────────────────────────────────────────
+  const pillInput =
+    "border-0 outline-0 p-0 h-auto bg-transparent shadow-none text-[#27292c] text-[11px] w-[110px] min-w-0 placeholder:text-[#9a9da2]";
+  const pillIconBtn =
+    "grid place-items-center w-4 h-4 border-0 rounded-full bg-[#e7e8eb] text-[#555] p-0 cursor-pointer shrink-0 transition-[background,color] duration-130 hover:bg-[#ff5361] hover:text-white [&_svg]:w-[10px] [&_svg]:h-[10px]";
+  const datePill = (filled: boolean) =>
+    `inline-flex flex-row items-center gap-[6px] h-[30px] px-[11px] border rounded-[15px] bg-white cursor-pointer transition-[border-color,box-shadow] duration-150 focus-within:border-[#17181a] focus-within:shadow-[0_0_0_2px_rgba(23,24,26,.08)] ${filled ? "border-[#17181a]" : "border-[#d1d4d9]"}`;
+  const dateInput =
+    "border-0 outline-0 bg-transparent text-[#27292c] text-[11px] w-[100px] p-0 h-auto shadow-none cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-45 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:w-[13px]";
+
   // ─── Toolbar ───────────────────────────────────────────────────────────────
   const toolbar = (
-    <div className="ut-toolbar">
+    <div className="sticky top-0 z-10 flex items-center justify-between gap-[10px] flex-wrap px-[14px] py-2 bg-[#f0f1f3] border-b border-[#dfe1e5] rounded-t-[7px] min-h-[46px]">
       {/* Left: title */}
-      <h3 className="ut-title">
+      <h3 className="m-0 text-[13px] font-bold text-[#17181a] whitespace-nowrap">
         {tab === "blocked" ? "Block User list" : "All User list"}
       </h3>
 
       {/* Right: controls */}
-      <div className="ut-controls">
+      <div className="flex items-center gap-2 flex-wrap">
 
         {/* Search user */}
-        <label className="ut-pill" aria-label="Search users">
+        <label
+          className="inline-flex flex-row items-center gap-[6px] h-[30px] px-[11px] border border-[#d1d4d9] rounded-[15px] bg-white cursor-text transition-[border-color,box-shadow] duration-150 focus-within:border-[#17181a] focus-within:shadow-[0_0_0_2px_rgba(23,24,26,.08)]"
+          aria-label="Search users"
+        >
           <input
-            className="ut-pill__input"
+            className={pillInput}
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="Search User"
@@ -88,7 +101,7 @@ export function UserTable() {
           {localSearch ? (
             <button
               type="button"
-              className="ut-pill__icon-btn"
+              className={pillIconBtn}
               onClick={() => setLocalSearch("")}
               title="Clear search"
             >
@@ -103,43 +116,41 @@ export function UserTable() {
         <button
           type="button"
           onClick={() => setTab((t) => (t === "blocked" ? "all" : "blocked"))}
-          className={`ut-block-pill${tab === "blocked" ? " ut-block-pill--active" : ""}`}
+          className={`inline-flex items-center gap-[5px] h-[30px] px-[13px] border rounded-[15px] text-white text-[11px] font-semibold cursor-pointer transition-[background,border-color] duration-130 whitespace-nowrap [&_svg]:w-3 [&_svg]:h-3 ${tab === "blocked" ? "bg-[#ff5361] border-[#ff5361] hover:bg-[#e8404e] hover:border-[#e8404e]" : "bg-[#17181a] border-[#d1d4d9] hover:bg-[#2e3035]"}`}
         >
           {tab === "blocked" ? <Shield /> : <ShieldOff />}
           Block User({blockedCount})
         </button>
 
         {/* Date From */}
-        <label className={`ut-pill ut-pill--date${dateFrom ? " ut-pill--filled" : ""}`} aria-label="Filter from date">
+        <label className={datePill(!!dateFrom)} aria-label="Filter from date">
           <input
             type="date"
-            className="ut-pill__date"
+            className={dateInput}
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
             title="From date"
           />
-          {/* <span className="ut-pill__icon"><Calendar /></span> */}
         </label>
 
-        <span className="ut-sep">To</span>
+        <span className="text-[11px] text-[#8a8d92] shrink-0 font-medium">To</span>
 
         {/* Date To */}
-        <label className={`ut-pill ut-pill--date${dateTo ? " ut-pill--filled" : ""}`} aria-label="Filter to date">
+        <label className={datePill(!!dateTo)} aria-label="Filter to date">
           <input
             type="date"
-            className="ut-pill__date"
+            className={dateInput}
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
             title="To date"
           />
-          {/* <span className="ut-pill__icon"><Calendar /></span> */}
         </label>
 
         {/* Clear date filter */}
         {hasDateFilter && (
           <button
             type="button"
-            className="ut-clear-date"
+            className="grid place-items-center w-[22px] h-[22px] border border-[#dfe1e4] rounded-full bg-white text-[#8a8d92] p-0 cursor-pointer transition-[background,color,border-color] duration-130 hover:bg-[#ff5361] hover:border-[#ff5361] hover:text-white [&_svg]:w-[11px] [&_svg]:h-[11px]"
             onClick={() => { setDateFrom(""); setDateTo(""); }}
             title="Clear date filter"
           >
@@ -149,7 +160,7 @@ export function UserTable() {
 
         {/* Navbar search active indicator */}
         {topQuery && (
-          <span className="ut-nav-badge">
+          <span className="inline-flex items-center h-[22px] px-[9px] rounded-[11px] bg-[#eff6ff] text-[#2563eb] text-[10px] font-semibold border border-[#bfdbfe] whitespace-nowrap animate-[fadeIn_.2s_ease]">
             Searching: "{topQuery}"
           </span>
         )}
@@ -159,7 +170,7 @@ export function UserTable() {
 
   // ─── Table ─────────────────────────────────────────────────────────────────
   return (
-    <section className="table-panel" style={{ marginTop: "15px" }}>
+    <section className="bg-white border border-[#e5e7ea] rounded-[7px] max-w-full mt-[15px] overflow-x-auto overflow-y-hidden" style={{ marginTop: "15px" }}>
       {toolbar}
       <table>
         <thead>
@@ -184,9 +195,13 @@ export function UserTable() {
               <tr key={user[0]}>
                 <td style={{ color: "#777", fontSize: "10px" }}>{displayNo}</td>
                 <td>
-                  <div className="user-cell">
-                    <img src={avatars[avatarIdx % avatars.length]} alt="" />
-                    <strong>{user[1]}</strong>
+                  <div className="flex items-center gap-[7px]">
+                    <img
+                      src={avatars[avatarIdx % avatars.length]}
+                      alt=""
+                      className="w-[22px] h-[22px] rounded-full object-cover"
+                    />
+                    <strong className="font-medium">{user[1]}</strong>
                   </div>
                 </td>
                 <td>{user[2]}</td>
@@ -202,11 +217,11 @@ export function UserTable() {
                   )}
                 </td>
                 <td>
-                  <div className="row-actions-group">
+                  <div className="flex items-center gap-[6px]">
                     {/* View Details */}
                     <Link
                       to={`/users/${user[0]}`}
-                      className="action-view-btn"
+                      className="inline-flex items-center gap-1 h-[27px] px-[10px] rounded-[13px] border border-[#d0d3d8] bg-white text-[#34363a] text-[10px] font-semibold no-underline whitespace-nowrap cursor-pointer transition-[background,border-color,color,box-shadow] duration-140 hover:bg-[#17181a] hover:border-[#17181a] hover:text-white hover:shadow-[0_2px_8px_rgba(23,24,26,.2)] [&_svg]:w-[11px] [&_svg]:h-[11px]"
                       title="View Details"
                     >
                       <Eye />
@@ -217,7 +232,7 @@ export function UserTable() {
                     <button
                       type="button"
                       onClick={() => toggleBlock(user[0])}
-                      className={`action-block-btn${u.blocked ? " action-block-btn--blocked" : ""}`}
+                      className={`inline-flex items-center gap-1 h-[27px] px-[10px] rounded-[13px] border text-[10px] font-semibold cursor-pointer whitespace-nowrap transition-[background,border-color,color] duration-140 [&_svg]:w-[11px] [&_svg]:h-[11px] ${u.blocked ? "bg-[#1a1c1f] border-[#1a1c1f] text-white hover:bg-[#ff5361] hover:border-[#ff5361] hover:text-white" : "border-[#e5e7ea] bg-[#f5f6f8] text-[#52565b] hover:bg-[#ffe5e8] hover:border-[#ffb3b8] hover:text-[#e5484d]"}`}
                       title={u.blocked ? "Unblock user" : "Block user"}
                     >
                       {u.blocked ? <Shield /> : <ShieldOff />}

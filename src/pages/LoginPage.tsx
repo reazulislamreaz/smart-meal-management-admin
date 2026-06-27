@@ -43,33 +43,50 @@ export function LoginPage({ onLogin }: Props) {
     setLoading(false);
   };
 
+  const fieldClass =
+    "flex flex-row items-center gap-0 w-full h-[46px] border border-[#dcdfe4] rounded-lg bg-white px-3 transition-[border-color,box-shadow] duration-150 cursor-text relative focus-within:border-[#17181a] focus-within:shadow-[0_0_0_3px_rgba(23,24,26,.07)]";
+  const fieldInputClass =
+    "flex-1 min-w-0 border-0 outline-0 p-0 bg-transparent shadow-none text-[#27292c] text-[13px] h-full placeholder:text-[#b0b3b8]";
+
   return (
-    <div className="login-bg">
-      <div className="login-card">
+    <div className="min-h-screen w-full bg-[#e8e9eb] flex items-center justify-center px-4 py-6">
+      <div className="w-full max-w-[380px] bg-white rounded-2xl shadow-[0_4px_32px_rgba(0,0,0,0.10)] px-9 pt-10 pb-8 flex flex-col items-center animate-[fadeIn_.25s_ease]">
         {/* Logo */}
-        <div className="login-logo">
-          sizzl<span>.</span>
+        <div className="text-[28px] font-extrabold tracking-[-1.5px] text-[#17181a] mb-[22px] leading-none">
+          sizzl<span className="text-[#17181a]">.</span>
         </div>
 
         {/* Heading */}
-        <h1 className="login-heading">Welcome Back</h1>
-        <p className="login-sub">Please Enter Your Details Below to Continue</p>
+        <h1 className="m-0 mb-[6px] text-[20px] font-bold text-[#17181a] tracking-[-.4px] text-center">
+          Welcome Back
+        </h1>
+        <p className="m-0 mb-[22px] text-[12px] text-[#8a8d92] text-center leading-normal">
+          Please Enter Your Details Below to Continue
+        </p>
 
         {/* Error */}
-        {error && <p className="login-error">{error}</p>}
+        {error && (
+          <p className="w-full m-0 mb-3 px-3 py-[9px] rounded-md bg-[#ffe5e8] text-[#e5484d] text-[12px] text-center border border-[#ffb3b8] animate-[fadeIn_.2s_ease]">
+            {error}
+          </p>
+        )}
 
         {/* Form */}
-        <form className="login-form" onSubmit={handleSubmit} noValidate>
+        <form
+          className="w-full flex flex-col gap-[14px]"
+          onSubmit={handleSubmit}
+          noValidate
+        >
           {/* Email */}
-          <label className="login-field">
-            <span className="login-field__icon">
+          <label className={fieldClass}>
+            <span className="flex items-center text-[#b0b3b8] shrink-0 mr-[10px] [&_svg]:w-4 [&_svg]:h-4">
               <Mail />
             </span>
-            <div className="login-field__divider" />
+            <div className="w-px h-[18px] bg-[#dcdfe4] shrink-0 mr-[10px]" />
             <input
               id="login-email"
               type="email"
-              className="login-field__input"
+              className={fieldInputClass}
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -79,15 +96,15 @@ export function LoginPage({ onLogin }: Props) {
           </label>
 
           {/* Password */}
-          <label className="login-field">
-            <span className="login-field__icon">
+          <label className={fieldClass}>
+            <span className="flex items-center text-[#b0b3b8] shrink-0 mr-[10px] [&_svg]:w-4 [&_svg]:h-4">
               <Lock />
             </span>
-            <div className="login-field__divider" />
+            <div className="w-px h-[18px] bg-[#dcdfe4] shrink-0 mr-[10px]" />
             <input
               id="login-password"
               type={showPassword ? "text" : "password"}
-              className="login-field__input"
+              className={fieldInputClass}
               placeholder="Enter Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -95,7 +112,7 @@ export function LoginPage({ onLogin }: Props) {
             />
             <button
               type="button"
-              className="login-eye"
+              className="grid place-items-center border-0 bg-transparent text-[#b0b3b8] p-0 shrink-0 ml-[6px] transition-colors duration-130 hover:text-[#17181a] [&_svg]:w-4 [&_svg]:h-4"
               onClick={() => setShowPassword((v) => !v)}
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
@@ -104,13 +121,13 @@ export function LoginPage({ onLogin }: Props) {
           </label>
 
           {/* Remember me row */}
-          <div className="login-remember-row">
-            <label className="login-remember">
+          <div className="flex items-center justify-start">
+            <label className="inline-flex flex-row items-center gap-2 text-[12px] text-[#52565b] cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={remember}
                 onChange={(e) => setRemember(e.target.checked)}
-                className="login-remember__check"
+                className="w-[15px] h-[15px] border-[1.5px] border-[#c5c8cc] rounded-[3px] bg-white p-0 m-0 shadow-none cursor-pointer shrink-0 accent-[#17181a]"
               />
               Remember me
             </label>
@@ -119,7 +136,7 @@ export function LoginPage({ onLogin }: Props) {
           {/* Submit */}
           <button
             type="submit"
-            className={`login-submit${loading ? " login-submit--loading" : ""}`}
+            className={`w-full h-[46px] border-0 rounded-[23px] bg-[#17181a] text-white text-[14px] font-semibold tracking-[.2px] cursor-pointer transition-[background,transform,opacity] duration-150 mt-1 hover:bg-[#2c2f34] active:scale-[.98] disabled:cursor-not-allowed${loading ? " opacity-70 cursor-not-allowed" : ""}`}
             disabled={loading}
           >
             {loading ? "Signing in…" : "Login"}
@@ -127,9 +144,13 @@ export function LoginPage({ onLogin }: Props) {
         </form>
 
         {/* Demo hint */}
-        <p className="login-hint">
-          Demo — email: <strong>{DEMO_EMAIL}</strong> &nbsp;|&nbsp; password:{" "}
-          <strong>{DEMO_PASSWORD}</strong>
+        <p className="mt-4 mb-0 text-[10px] text-[#a0a3a8] text-center leading-[1.6]">
+          Demo — email:{" "}
+          <strong className="text-[#52565b] font-semibold">{DEMO_EMAIL}</strong>{" "}
+          &nbsp;|&nbsp; password:{" "}
+          <strong className="text-[#52565b] font-semibold">
+            {DEMO_PASSWORD}
+          </strong>
         </p>
       </div>
     </div>

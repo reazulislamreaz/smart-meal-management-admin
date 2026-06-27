@@ -82,16 +82,24 @@ export function SubscriptionForm({ edit = false }: { edit?: boolean }) {
   };
 
   return (
-    <div className="narrow-page">
-      <Link to="/subscription/plans" className="back">
+    <div className="max-w-[480px] mx-auto max-[620px]:w-full">
+      <Link
+        to="/subscription/plans"
+        className="flex items-center gap-2 text-[16px] font-bold mb-6 [&_svg]:w-[18px] max-[620px]:text-[14px] max-[620px]:mb-[18px]"
+      >
         <ArrowLeft /> {edit ? "Edit Subscription" : "Create Subscription"}
       </Link>
-      <form className="form-card" onSubmit={handleSubmit}>
-        <h3>{edit ? "Edit Subscription" : "Create Subscription"}</h3>
+      <form
+        className="bg-white border border-[#e5e7ea] rounded-[7px] p-[18px] flex flex-col gap-[10px] max-[420px]:p-[14px] [&_input]:h-[34px] [&_select]:h-[34px]"
+        onSubmit={handleSubmit}
+      >
+        <h3 className="m-0 mb-[5px] text-[16px]">
+          {edit ? "Edit Subscription" : "Create Subscription"}
+        </h3>
 
         {error && (
           <p
-            className="form-message error"
+            className="m-0 text-[#ff5361] text-[11px] leading-[1.4]"
             role="alert"
             style={{ marginBottom: "12px" }}
           >
@@ -134,7 +142,7 @@ export function SubscriptionForm({ edit = false }: { edit?: boolean }) {
           </select>
         </label>
 
-        <label className="feature-label">
+        <label className="relative [&_button]:absolute [&_button]:left-[calc(100%+12px)] [&_button]:bottom-0 [&_button]:h-[34px] [&_button]:border-0 [&_button]:text-[#555] [&_button]:bg-[#f0f1f3] [&_button]:text-[12px] max-[900px]:[&_button]:static max-[900px]:[&_button]:w-full max-[900px]:[&_button]:mt-[5px]">
           Features
           <div
             style={{

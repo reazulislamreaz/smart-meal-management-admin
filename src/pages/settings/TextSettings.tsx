@@ -42,7 +42,7 @@ export function TextSettings({ type }: { type: "privacy" | "about" }) {
 
   return (
     <SettingsLayout>
-      <section className="text-settings" style={{ padding: "20px", position: "relative" }}>
+      <section className="bg-white border border-[#e5e7ea] rounded-[7px] p-[18px] min-h-[230px] max-[420px]:p-[14px] [&_.dark-button]:float-right [&_.dark-button]:min-w-[80px]" style={{ padding: "20px", position: "relative" }}>
         {success && (
           <SettingsToast message={success} onDismiss={() => setSuccess("")} />
         )}
@@ -50,7 +50,7 @@ export function TextSettings({ type }: { type: "privacy" | "about" }) {
         {isEditing ? (
           <>
             <div
-              className="editor-bar"
+              className="h-[22px] flex justify-end gap-[10px] text-[#555] [&_:is(b,i,u,span)]:cursor-default [&_:is(b,i,u,span)]:px-1 [&_:is(b,i,u,span)]:py-[2px] [&_:is(b,i,u,span)]:rounded-[2px] [&_:is(b,i,u,span)]:transition-[background,color] [&_:is(b,i,u,span)]:duration-150 [&_:is(b,i,u,span):hover]:bg-[#f0f1f3] [&_:is(b,i,u,span):hover]:text-[#17181a]"
               style={{
                 display: "flex",
                 gap: "8px",

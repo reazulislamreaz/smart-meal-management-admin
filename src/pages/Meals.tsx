@@ -115,15 +115,15 @@ export function Meals() {
   return (
     <>
       {/* ── Meals toolbar ─────────────────────────────────────── */}
-      <div className="meals-toolbar">
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-4 px-4 py-[10px] bg-white border border-[#e5e7ea] rounded-[8px] shadow-[0_1px_4px_rgba(0,0,0,.04)]">
         {/* Left: search + category tabs */}
-        <div className="meals-toolbar__left">
+        <div className="flex items-center gap-[10px] flex-wrap flex-1">
           {/* Search pill */}
-          <label className="meals-search-pill">
-            <Search className="meals-search-pill__icon" />
+          <label className="group inline-flex flex-row items-center gap-2 h-9 px-3 border-[1.5px] border-[#d1d4d9] rounded-[18px] bg-[#f7f8fa] w-[230px] cursor-text transition-[border-color,box-shadow,background] duration-150 focus-within:border-[#17181a] focus-within:bg-white focus-within:shadow-[0_0_0_3px_rgba(23,24,26,.07)]">
+            <Search className="w-[14px] h-[14px] text-[#8a8d92] shrink-0 transition-colors duration-150 group-focus-within:text-[#17181a]" />
             <input
               aria-label="Search meals"
-              className="meals-search-pill__input"
+              className="flex-1 min-w-0 w-0 h-auto border-0 outline-0 p-0 bg-transparent text-[#27292c] text-[12px] shadow-none placeholder:text-[#9a9da2]"
               value={query}
               onChange={(e) => handleSearchChange(e.target.value)}
               onKeyDown={(e) => e.key === "Escape" && clearSearch()}
@@ -132,7 +132,7 @@ export function Meals() {
             {query && (
               <button
                 type="button"
-                className="meals-search-pill__clear"
+                className="grid place-items-center w-[18px] h-[18px] border-0 rounded-full bg-[#e7e8eb] text-[#555] p-0 cursor-pointer shrink-0 transition-[background,color] duration-130 hover:bg-[#ff5361] hover:text-white [&_svg]:w-[10px] [&_svg]:h-[10px]"
                 onClick={clearSearch}
                 title="Clear search"
               >
@@ -142,12 +142,12 @@ export function Meals() {
           </label>
 
           {/* Category tabs */}
-          <div className="meal-tabs">
+          <div className="flex gap-1 max-[1100px]:order-3 max-[1100px]:w-full max-[620px]:overflow-x-auto">
             {["All", "Breakfast", "Lunch", "Dinner"].map((tab) => (
               <button
                 key={tab}
                 type="button"
-                className={category === tab ? "active" : ""}
+                className={`h-8 px-[14px] border rounded-[16px] text-[12px] transition-[background,color,border-color] duration-150 max-[620px]:flex-none ${category === tab ? "border-[#17181a] text-[#17181a] bg-white font-semibold" : "border-transparent bg-[#f0f1f3] text-[#686c72] font-medium hover:bg-[#e7e8eb] hover:text-[#34363a]"}`}
                 onClick={() => setCategory(tab)}
               >
                 {tab}
@@ -157,7 +157,7 @@ export function Meals() {
         </div>
 
         {/* Right: actions */}
-        <div className="meals-toolbar__right">
+        <div className="flex items-center gap-2 shrink-0">
           <Link
             to="/meal-options"
             className="dark-button"
@@ -197,8 +197,8 @@ export function Meals() {
         />
       )}
 
-      <section className="table-panel meal-table">
-        <table>
+      <section className="bg-white border border-[#e5e7ea] rounded-[7px] max-w-full overflow-x-auto overflow-y-hidden mt-3">
+        <table className="[&_td]:h-[39px]">
           <thead>
             <tr>
               {[
@@ -233,7 +233,7 @@ export function Meals() {
                   <button
                     type="button"
                     aria-label={`Edit ${m[0]}`}
-                    className="tiny-action"
+                    className="w-[21px] h-[21px] border border-[#dfe1e4] bg-white rounded-[3px] text-[#777] mr-1 [&_svg]:w-[9px]"
                     onClick={() => editMeal(m)}
                   >
                     <Pencil />
@@ -241,7 +241,7 @@ export function Meals() {
                   <button
                     type="button"
                     aria-label={`Delete ${m[0]}`}
-                    className="tiny-action delete"
+                    className="w-[21px] h-[21px] border border-[#dfe1e4] bg-white rounded-[3px] text-[#ff4d5b] mr-1 [&_svg]:w-[9px]"
                     onClick={() =>
                       setMealRows((current) =>
                         current.filter((meal) => meal !== m),

@@ -18,7 +18,7 @@ export function MealForm({
 }) {
   return (
     <form
-      className="meal-form panel"
+      className="bg-white border border-[#e5e7ea] rounded-[7px] p-[14px]"
       onSubmit={onSubmit}
       style={{ position: "relative", padding: "20px", marginBottom: "16px" }}
     >
@@ -45,7 +45,7 @@ export function MealForm({
         {editing ? "Edit meal" : "Add new meal"}
       </h3>
 
-      <div className="meal-inputs">
+      <div className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-2 mb-[10px] max-[620px]:grid-cols-2 max-[420px]:grid-cols-1">
         <label>
           NAME
           <input
@@ -98,7 +98,7 @@ export function MealForm({
 
       {error && (
         <p
-          className="form-message error"
+          className="m-0 text-[#ff5361] text-[11px] leading-[1.4]"
           role="alert"
           style={{ marginTop: "12px", marginBottom: "12px" }}
         >
@@ -106,7 +106,7 @@ export function MealForm({
         </p>
       )}
 
-      <div className="form-actions" style={{ marginTop: "16px" }}>
+      <div className="flex items-center gap-2 mt-1" style={{ marginTop: "16px" }}>
         <button className="dark-button" type="submit" style={{ height: "32px", fontSize: "11px", padding: "0 16px" }}>
           {editing ? "Update meal" : "Save meal"}
         </button>

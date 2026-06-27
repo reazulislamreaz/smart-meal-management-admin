@@ -73,25 +73,29 @@ export function MealOptions() {
   };
 
   return (
-    <div className="options-page">
-      <section className="option-card">
-        <div>
-          <h3>Dietary options</h3>
+    <div className="px-1">
+      <section className="bg-white border border-[#e5e7ea] rounded-[7px] px-[18px] py-[15px] mb-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-[16px] m-0">Dietary options</h3>
           <button
             type="button"
-            className="add pale-green"
+            className="border-0 rounded-[3px] px-[9px] py-[5px] flex gap-1 items-center text-[12px] [&_svg]:w-[9px] text-[#22a65b] bg-[#e3f9eb]"
             onClick={() => openModal("diet")}
           >
             <Plus /> Add
           </button>
         </div>
-        <div className="chips">
+        <div className="flex flex-wrap gap-[7px] mt-3">
           {diet.map((x) => (
-            <span key={x}>
+            <span
+              key={x}
+              className="px-2 py-[5px] rounded-[12px] text-[#73777c] bg-[#f0f2f4] text-[12px] inline-flex items-center gap-1 transition-[background] duration-150 hover:bg-[#e7e8eb]"
+            >
               {x}
               <button
                 type="button"
                 aria-label={`Remove ${x}`}
+                className="border-0 bg-transparent text-[#9a9da2] pl-[2px] text-[12px] leading-none transition-colors duration-150 hover:text-[#ff5361]"
                 onClick={() =>
                   setDiet((current) => current.filter((item) => item !== x))
                 }
@@ -102,24 +106,28 @@ export function MealOptions() {
           ))}
         </div>
       </section>
-      <section className="option-card">
-        <div>
-          <h3>Cuisine types</h3>
+      <section className="bg-white border border-[#e5e7ea] rounded-[7px] px-[18px] py-[15px] mb-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-[16px] m-0">Cuisine types</h3>
           <button
             type="button"
-            className="add pale-blue"
+            className="border-0 rounded-[3px] px-[9px] py-[5px] flex gap-1 items-center text-[12px] [&_svg]:w-[9px] text-[#3480dc] bg-[#e9f3ff]"
             onClick={() => openModal("cuisine")}
           >
             <Plus /> Add
           </button>
         </div>
-        <div className="chips">
+        <div className="flex flex-wrap gap-[7px] mt-3">
           {cuisine.map((x) => (
-            <span key={x}>
+            <span
+              key={x}
+              className="px-2 py-[5px] rounded-[12px] text-[#73777c] bg-[#f0f2f4] text-[12px] inline-flex items-center gap-1 transition-[background] duration-150 hover:bg-[#e7e8eb]"
+            >
               {x}
               <button
                 type="button"
                 aria-label={`Remove ${x}`}
+                className="border-0 bg-transparent text-[#9a9da2] pl-[2px] text-[12px] leading-none transition-colors duration-150 hover:text-[#ff5361]"
                 onClick={() =>
                   setCuisine((current) => current.filter((item) => item !== x))
                 }
