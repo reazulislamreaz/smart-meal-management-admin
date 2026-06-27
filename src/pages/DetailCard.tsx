@@ -1,37 +1,152 @@
-import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
+import { useStoredState } from "@/hooks/useStoredState";
 import { users, avatars } from "@/data/adminData";
 
 export function DetailCard({ earnings = false }: { earnings?: boolean }) {
   const { id } = useParams();
   const user = users.find((item) => item[0] === id) ?? users[0];
-  const [blocked, setBlocked] = useState(false);
+  const avatarIdx = (Number(user[0]) - 1) % avatars.length;
+
+  const [blockedIds, setBlockedIds] = useStoredState<string[]>(
+    "sizzl-blocked-users",
+    ["03", "05"],
+  );
+  const isBlocked = blockedIds.includes(user[0]);
+
+  const toggleBlock = () => {
+    setBlockedIds((prev) =>
+      prev.includes(user[0])
+        ? prev.filter((x) => x !== user[0])
+        : [...prev, user[0]],
+    );
+  };
+
+  const joiningDate = (user[5] ?? "").split("\n")[0];
+
   return (
     <div className="details-wrap">
       <Link to={earnings ? "/earnings" : "/users"} className="back">
         <ArrowLeft /> User Details
       </Link>
-      <div className="identity-card">
-        <div className="identity">
-          <img src={avatars[(Number(user[0]) - 1) % avatars.length]} alt="" />
-          <div>
-            <strong>{user[1]}</strong>
-            <span>{earnings ? "" : "Member"}</span>
-          </div>
+
+      {/* ── Identity card ───────────────────────────────────────────── */}
+      <div className="identity-card" style={{ flexDirection: "column", alignItems: "center", gap: "14px", padding: "28px 18px 22px" }}>
+        {/* Avatar */}
+        <div style={{ position: "relative" }}>
+          <img
+            src={avatars[avatarIdx]}
+            alt={user[1]}
+            style={{
+              width: "90px",
+              height: "90px",
+              borderRadius: "50%",
+              objectFit: "cover",
+              border: "3px solid #fff",
+              boxShadow: "0 4px 14px rgba(0,0,0,0.12)",
+            }}
+          />
+          {/* Active green dot */}
+          <span
+            style={{
+              position: "absolute",
+              bottom: "4px",
+              right: "4px",
+              width: "14px",
+              height: "14px",
+              borderRadius: "50%",
+              background: "#22c55e",
+              border: "2px solid #fff",
+            }}
+          />
         </div>
+
+        {/* Name + badge */}
+        <div style={{ textAlign: "center" }}>
+          <strong style={{ fontSize: "16px", display: "block", marginBottom: "8px" }}>
+            {user[1]}
+          </strong>
+          <span
+            style={{
+              display: "inline-block",
+              background: isBlocked ? "#ffe5e8" : "#ffe5e8",
+              color: isBlocked ? "#e5484d" : "#e5484d",
+              borderRadius: "12px",
+              padding: "3px 14px",
+              fontSize: "9px",
+              fontWeight: 600,
+            }}
+          >
+            {isBlocked ? "Blocked" : "Active"}
+          </span>
+        </div>
+
+        {/* Block / Unblock button */}
         {!earnings && (
           <button
             type="button"
-            className="danger-pill"
-            onClick={() => setBlocked((value) => !value)}
+            onClick={toggleBlock}
+            style={{
+              border: 0,
+              borderRadius: "16px",
+              padding: "7px 20px",
+              fontSize: "9px",
+              fontWeight: 600,
+              cursor: "pointer",
+              background: isBlocked ? "#17181a" : "#ff5361",
+              color: "#fff",
+            }}
           >
-            {blocked ? "Unblock User" : "Block User"}
+            {isBlocked ? "Unblock User" : "Block User"}
           </button>
         )}
       </div>
-      {earnings ? (
-        <section className="info-card">
+
+      {/* ── Stats row ───────────────────────────────────────────────── */}
+      <div className="detail-stats" style={{ marginTop: "14px" }}>
+        <div>
+          <span>Active Meals</span>
+          <strong>10</strong>
+        </div>
+        <div>
+          <span>Total Spend</span>
+          <strong>$5.00</strong>
+        </div>
+      </div>
+
+      {/* ── User Information ────────────────────────────────────────── */}
+      {!earnings ? (
+        <section className="info-card" style={{ marginTop: "14px" }}>
+          <h3>User Information</h3>
+          <div className="info-grid">
+            <div>
+              <span>Name</span>
+              <strong>{user[1]}</strong>
+            </div>
+            <div>
+              <span>Address</span>
+              <strong>{user[4]}</strong>
+            </div>
+            <div>
+              <span>Email</span>
+              <strong>{user[2]}</strong>
+            </div>
+            <div>
+              <span>Phone number</span>
+              <strong>{user[3]}</strong>
+            </div>
+            <div>
+              <span>Joining Date</span>
+              <strong>{joiningDate}</strong>
+            </div>
+            <div>
+              <span>Current plan</span>
+              <strong className="approved">Annual</strong>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <section className="info-card" style={{ marginTop: "14px" }}>
           <h3>Subscription Buying Information</h3>
           <div className="info-grid three">
             {[
@@ -47,59 +162,11 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
             ].map(([a, b]) => (
               <div key={a}>
                 <span>{a}</span>
-                <strong className={a === "Status" ? "approved" : ""}>
-                  {b}
-                </strong>
+                <strong className={a === "Status" ? "approved" : ""}>{b}</strong>
               </div>
             ))}
           </div>
         </section>
-      ) : (
-        <>
-          <div className="detail-stats">
-            <div>
-              <span>Active Meals</span>
-              <strong>12</strong>
-            </div>
-            <div>
-              <span>Total Spend</span>
-              <strong>$ 350</strong>
-            </div>
-          </div>
-          <section className="info-card">
-            <h3>User Information</h3>
-            <div className="info-grid">
-              <div>
-                <span>Email</span>
-                <strong>{user[2]}</strong>
-              </div>
-              <div>
-                <span>Phone number</span>
-                <strong>{user[3]}</strong>
-              </div>
-              <div>
-                <span>Joining Date</span>
-                <strong>{user[5]}</strong>
-              </div>
-              <div>
-                <span>Current plan</span>
-                <strong className="approved">Annual</strong>
-              </div>
-            </div>
-          </section>
-        </>
-      )}
-      {earnings && (
-        <div className="detail-stats">
-          <div>
-            <span>Active Meals</span>
-            <strong>21</strong>
-          </div>
-          <div>
-            <span>Total Spend</span>
-            <strong>$ 350</strong>
-          </div>
-        </div>
       )}
     </div>
   );
