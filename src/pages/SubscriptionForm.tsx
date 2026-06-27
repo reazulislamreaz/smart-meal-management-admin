@@ -151,28 +151,7 @@ export function SubscriptionForm({ edit = false }: { edit?: boolean }) {
               width: "100%",
               marginTop: "4px",
             }}
-          >
-            <input
-              value={featureDraft}
-              onChange={(event) => setFeatureDraft(event.target.value)}
-              placeholder="e.g. Custom nutrition goals"
-              style={{ flex: 1 }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addFeature(featureDraft);
-                }
-              }}
-            />
-            <button
-              type="button"
-              className="dark-button"
-              onClick={() => addFeature(featureDraft)}
-              style={{ height: "36px", padding: "0 16px", fontSize: "11px" }}
-            >
-              Add
-            </button>
-          </div>
+          ></div>
         </label>
 
         <div
