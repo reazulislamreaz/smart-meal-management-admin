@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Navigate, Route, Routes, BrowserRouter } from "react-router-dom";
 import AppDataProvider from "@/context/AppDataContext";
 import Shell from "@/components/layout/Shell";
+import LoginPage from "@/pages/LoginPage";
 import Dashboard from "@/pages/admin/Dashboard";
 import Users from "@/pages/Users";
 import DetailCard from "@/pages/DetailCard";
@@ -16,11 +18,32 @@ import AppConfiguration from "@/pages/settings/AppConfiguration";
 import TextSettings from "@/pages/settings/TextSettings";
 import ContactSettings from "@/pages/settings/ContactSettings";
 
+function isAuthenticated() {
+  return (
+    localStorage.getItem("sizzl-auth") === "1" ||
+    sessionStorage.getItem("sizzl-auth") === "1"
+  );
+}
+
 export default function App() {
+  const [authed, setAuthed] = useState(isAuthenticated);
+
+  const handleLogin = () => setAuthed(true);
+
+  const handleLogout = () => {
+    localStorage.removeItem("sizzl-auth");
+    sessionStorage.removeItem("sizzl-auth");
+    setAuthed(false);
+  };
+
+  if (!authed) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
   return (
     <AppDataProvider>
       <BrowserRouter>
-        <Shell>
+        <Shell onLogout={handleLogout}>
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/users" element={<Users />} />

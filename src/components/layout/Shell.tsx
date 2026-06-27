@@ -12,7 +12,7 @@ import { useAppData } from "@/context/AppDataContext";
 import { avatars, nav } from "@/data/adminData";
 import notificationArt from "@/assets/hero.png";
 
-export function Shell({ children }: { children: ReactNode }) {
+export function Shell({ children, onLogout }: { children: ReactNode; onLogout?: () => void }) {
   const { profile } = useAppData();
   const location = useLocation();
   const navigate = useNavigate();
@@ -73,7 +73,11 @@ export function Shell({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setProfileOpen(false);
-    navigate("/");
+    if (onLogout) {
+      onLogout();
+    } else {
+      navigate("/");
+    }
   };
 
   return (
