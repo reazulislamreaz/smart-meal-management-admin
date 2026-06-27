@@ -22,6 +22,7 @@ export const initialProfile: Profile = {
   address: "USA",
   role: "Admin",
   memberSince: "January",
+  avatar: "https://i.pravatar.cc/96?img=12",
 };
 
 export const initialPreferences: Preferences = {

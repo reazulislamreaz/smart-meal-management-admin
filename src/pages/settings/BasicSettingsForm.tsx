@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   User,
@@ -8,6 +8,7 @@ import {
   Lock,
   Eye,
   EyeOff,
+  Camera,
 } from "lucide-react";
 import { useAppData } from "@/context/AppDataContext";
 import SettingsToast from "@/components/common/SettingsToast";
@@ -35,6 +36,25 @@ export function BasicSettingsForm({
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Please choose an image file.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setError("");
+        setProfileDraft((current) => ({ ...current, avatar: reader.result as string }));
+      }
+    };
+    reader.readAsDataURL(file);
+    event.target.value = "";
+  };
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -107,6 +127,45 @@ export function BasicSettingsForm({
 
         {type === "profile" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div className="flex items-center gap-[14px] pb-[6px]">
+              <div className="relative shrink-0">
+                <img
+                  src={profileDraft.avatar}
+                  alt="Profile"
+                  className="w-[64px] h-[64px] rounded-full object-cover border border-[#e5e7ea]"
+                />
+                <button
+                  type="button"
+                  aria-label="Change profile photo"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="absolute -bottom-1 -right-1 w-[24px] h-[24px] grid place-items-center rounded-full bg-[#17181a] text-white border-2 border-white"
+                >
+                  <Camera size={12} />
+                </button>
+              </div>
+              <div className="flex flex-col gap-[6px]">
+                <span className="text-[12px] font-semibold text-[#27292c]">
+                  Profile photo
+                </span>
+                <span className="text-[11px] text-[#8a8d92]">
+                  JPG or PNG, square images look best.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="self-start outline-button px-[10px] py-[5px] rounded-[4px] text-[11px] font-medium"
+                >
+                  Change photo
+                </button>
+              </div>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
+            </div>
             <label style={{ gap: "4px" }}>
               User name
               <div style={wrapperStyle}>

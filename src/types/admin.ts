@@ -7,6 +7,7 @@ export type Profile = {
   address: string;
   role: string;
   memberSince: string;
+  avatar: string;
 };
 
 export type Preferences = {

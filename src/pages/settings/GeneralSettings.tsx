@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { Pencil } from "lucide-react";
 import { useAppData } from "@/context/AppDataContext";
-import { avatars } from "@/data/adminData";
 import SettingsLayout from "@/components/settings/SettingsLayout";
 
 export function GeneralSettings() {
@@ -11,12 +10,12 @@ export function GeneralSettings() {
       <section className="bg-white border border-[#e5e7ea] rounded-[7px] flex justify-between items-center px-[18px] py-[15px] mb-[14px] max-[420px]:items-start max-[420px]:gap-[10px]">
         <div className="flex items-center gap-3">
           <img
-            src={avatars[0]}
+            src={profile.avatar}
             alt=""
             className="w-[45px] h-[45px] rounded-full object-cover max-[420px]:w-[40px] max-[420px]:h-[40px]"
           />
           <div className="flex flex-col gap-1">
-            <strong style={{ fontSize: "14px" }}>Khairul Islam</strong>
+            <strong style={{ fontSize: "14px" }}>{profile.name}</strong>
             <span style={{ color: "#777", fontSize: "11px" }}>{profile.role}</span>
           </div>
         </div>

@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useAppData } from "@/context/AppDataContext";
-import { avatars, nav } from "@/data/adminData";
+import { nav } from "@/data/adminData";
 import notificationArt from "@/assets/hero.png";
 
 export function Shell({ children, onLogout }: { children: ReactNode; onLogout?: () => void }) {
@@ -166,7 +166,7 @@ export function Shell({ children, onLogout }: { children: ReactNode; onLogout?: 
                 setNotificationsOpen(false);
               }}
             >
-              <img src={avatars[0]} alt="" />
+              <img src={profile.avatar} alt="" />
               <strong>{profile.name}</strong>
               <ChevronDown />
             </button>
