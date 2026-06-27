@@ -138,7 +138,7 @@ export function Shell({ children }: { children: ReactNode }) {
                 aria-label="Clear search"
                 onClick={clearSearch}
               >
-                <X />
+                {/* <X /> */}
               </button>
             )}
           </label>

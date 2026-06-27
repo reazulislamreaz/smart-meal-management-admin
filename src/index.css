@@ -169,10 +169,104 @@ tbody tr:hover { background: #fafbfc; }
 .meal-search-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
 .meal-form-top { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .searchbox.small { width: 270px; height: 30px; }
+
+/* ── Meals page toolbar ──────────────────────────────────────── */
+.meals-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 10px 16px;
+  background: #fff;
+  border: 1px solid #e5e7ea;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+}
+.meals-toolbar__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+}
+.meals-toolbar__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ── Meals search pill ───────────────────────────────────────── */
+.meals-search-pill {
+  /* override global: label { flex-direction: column } */
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1.5px solid #d1d4d9;
+  border-radius: 18px;
+  background: #f7f8fa;
+  width: 230px;
+  cursor: text;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.meals-search-pill:focus-within {
+  border-color: #17181a;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(23,24,26,.07);
+}
+.meals-search-pill__icon {
+  width: 14px;
+  height: 14px;
+  color: #8a8d92;
+  flex-shrink: 0;
+  transition: color .15s ease;
+}
+.meals-search-pill:focus-within .meals-search-pill__icon { color: #17181a; }
+
+.meals-search-pill__input {
+  /* override global: input { border; padding; background } */
+  flex: 1;
+  min-width: 0;
+  width: 0;
+  height: auto;
+  border: 0 !important;
+  outline: 0;
+  padding: 0 !important;
+  background: transparent !important;
+  color: #27292c;
+  font-size: 12px;
+  box-shadow: none !important;
+}
+.meals-search-pill__input::placeholder { color: #9a9da2; }
+
+.meals-search-pill__clear {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 50%;
+  background: #e7e8eb;
+  color: #555;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .13s ease, color .13s ease;
+}
+.meals-search-pill__clear svg { width: 10px; height: 10px; }
+.meals-search-pill__clear:hover { background: #ff5361; color: #fff; }
+
+/* ── Meal tabs (upgraded) ────────────────────────────────────── */
 .meal-tabs { display: flex; gap: 4px; }
-.meal-tabs button { height: 28px; padding: 0 12px; border: 0; border-radius: 3px; background: #f0f1f3; color: #686c72; font-size: 8px; transition: background .15s ease, color .15s ease, border-color .15s ease; }
-.meal-tabs button:hover { background: #e7e8eb; }
-.meal-tabs .active { border: 1px solid #f0b54f; color: #d79520; background: #fff9ec; }
+.meal-tabs button { height: 32px; padding: 0 14px; border: 1px solid transparent; border-radius: 16px; background: #f0f1f3; color: #686c72; font-size: 12px; font-weight: 500; transition: background .15s ease, color .15s ease, border-color .15s ease; }
+.meal-tabs button:hover { background: #e7e8eb; color: #34363a; }
+.meal-tabs .active { border-color: #17181a; color: #17181a; background: #fff; font-weight: 600; }
+
 .dark-button { display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 4px; color: #fff; background: #151618; padding: 8px 13px; font-size: 9px; }
 .meal-form-top .dark-button:first-of-type { margin-left: auto; }
 .meal-form h3 { font-size: 12px; margin: 15px 0 10px; }
@@ -189,6 +283,7 @@ input, select, textarea { border: 1px solid #d7d9dd; border-radius: 3px; backgro
 .tiny-action.delete { color: #ff4d5b; }
 .form-actions { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
 .form-message.error { margin: 0; color: #ff5361; font-size: 11px; line-height: 1.4; }
+
 
 .options-page { padding: 0 4px; }
 .option-card { padding: 15px 18px; margin-bottom: 16px; }
@@ -404,7 +499,9 @@ textarea,
 
 /* ── Shared pill (Search User / date inputs) ─────────────── */
 .ut-pill {
+  /* override global: label { flex-direction: column } */
   display: inline-flex;
+  flex-direction: row;
   align-items: center;
   gap: 6px;
   height: 30px;
@@ -422,12 +519,17 @@ textarea,
 .ut-pill--filled { border-color: #17181a; }
 
 .ut-pill__input {
-  border: 0;
+  /* override global: input { border; padding; background } */
+  border: 0 !important;
   outline: 0;
-  background: transparent;
+  padding: 0 !important;
+  height: auto;
+  background: transparent !important;
+  box-shadow: none !important;
   color: #27292c;
   font-size: 11px;
   width: 110px;
+  min-width: 0;
 }
 .ut-pill__input::placeholder { color: #9a9da2; }
 
@@ -459,13 +561,15 @@ textarea,
 /* ── Date pill ───────────────────────────────────────────── */
 .ut-pill--date { cursor: pointer; }
 .ut-pill__date {
-  border: 0;
+  border: 0 !important;
   outline: 0;
-  background: transparent;
+  background: transparent !important;
   color: #27292c;
   font-size: 11px;
   width: 100px;
-  padding: 0;
+  padding: 0 !important;
+  height: auto;
+  box-shadow: none !important;
   cursor: pointer;
 }
 .ut-pill__date::-webkit-calendar-picker-indicator { opacity: 0.45; cursor: pointer; width: 13px; }

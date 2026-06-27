@@ -114,37 +114,34 @@ export function Meals() {
 
   return (
     <>
-      <section
-        className="meal-search-row"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "12px",
-          marginBottom: "14px",
-          width: "100%",
-        }}
-      >
-        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-          <label className="searchbox small">
-            <Search />
+      {/* ── Meals toolbar ─────────────────────────────────────── */}
+      <div className="meals-toolbar">
+        {/* Left: search + category tabs */}
+        <div className="meals-toolbar__left">
+          {/* Search pill */}
+          <label className="meals-search-pill">
+            <Search className="meals-search-pill__icon" />
             <input
               aria-label="Search meals"
+              className="meals-search-pill__input"
               value={query}
-              onChange={(event) => handleSearchChange(event.target.value)}
-              onKeyDown={(event) => event.key === "Escape" && clearSearch()}
-              placeholder="Search meals..."
+              onChange={(e) => handleSearchChange(e.target.value)}
+              onKeyDown={(e) => e.key === "Escape" && clearSearch()}
+              placeholder="Search meals…"
             />
             {query && (
               <button
-                className="search-clear"
-                onClick={clearSearch}
                 type="button"
+                className="meals-search-pill__clear"
+                onClick={clearSearch}
+                title="Clear search"
               >
                 <X />
               </button>
             )}
           </label>
+
+          {/* Category tabs */}
           <div className="meal-tabs">
             {["All", "Breakfast", "Lunch", "Dinner"].map((tab) => (
               <button
@@ -159,14 +156,19 @@ export function Meals() {
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "8px" }}>
-          <Link to="/meal-options" className="dark-button" style={{ height: "32px", fontSize: "11px", padding: "0 14px", display: "inline-flex", alignItems: "center" }}>
+        {/* Right: actions */}
+        <div className="meals-toolbar__right">
+          <Link
+            to="/meal-options"
+            className="dark-button"
+            style={{ height: "34px", fontSize: "11px", padding: "0 16px", display: "inline-flex", alignItems: "center", borderRadius: "6px" }}
+          >
             + Add Content
           </Link>
           <button
             type="button"
             className="dark-button"
-            style={{ height: "32px", fontSize: "11px", padding: "0 14px" }}
+            style={{ height: "34px", fontSize: "11px", padding: "0 16px", borderRadius: "6px" }}
             onClick={() => {
               setIsFormOpen(true);
               window.setTimeout(() => {
@@ -177,7 +179,7 @@ export function Meals() {
             + Add Meal
           </button>
         </div>
-      </section>
+      </div>
 
       {(isFormOpen || editingIndex !== null) && (
         <MealForm
