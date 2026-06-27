@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
-import { Search, Calendar, X } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { Search, Calendar, X, Eye, ShieldOff, Shield } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useStoredState } from "@/hooks/useStoredState";
 import { users, avatars } from "@/data/adminData";
 import EmptyState from "@/components/common/EmptyState";
@@ -12,6 +12,7 @@ const DEFAULT_BLOCKED: string[] = ["03", "05"];
 // ─── Main Component ─────────────────────────────────────────────────────────
 export function UserTable() {
   const [searchParams] = useSearchParams();
+  // top-bar navbar search (URL ?q=)
   const topQuery = (searchParams.get("q") ?? "").toLowerCase();
 
   const [blockedIds, setBlockedIds] = useStoredState<string[]>(
@@ -26,12 +27,12 @@ export function UserTable() {
   const [page, setPage] = useState(1);
   const pageSize = 7;
 
+  // navbar search takes priority over local search
   const query = topQuery || localSearch.toLowerCase();
 
   // Combined list with block state
   const allUsers = useMemo(
-    () =>
-      users.map((u) => ({ data: u, blocked: blockedIds.includes(u[0]) })),
+    () => users.map((u) => ({ data: u, blocked: blockedIds.includes(u[0]) })),
     [blockedIds],
   );
 
@@ -44,7 +45,7 @@ export function UserTable() {
       })
       .filter((u) => {
         if (!dateFrom && !dateTo) return true;
-        const joining = (u.data[5] ?? "").split("\n")[0]; // only date part "2025-03-12"
+        const joining = (u.data[5] ?? "").split("\n")[0];
         if (dateFrom && joining < dateFrom) return false;
         if (dateTo && joining > dateTo) return false;
         return true;
@@ -57,6 +58,7 @@ export function UserTable() {
   useEffect(() => setPage(1), [tab, query, dateFrom, dateTo]);
 
   const blockedCount = blockedIds.length;
+  const hasDateFilter = !!(dateFrom || dateTo);
 
   const toggleBlock = (id: string) => {
     setBlockedIds((prev) =>
@@ -66,106 +68,90 @@ export function UserTable() {
 
   // ─── Toolbar ───────────────────────────────────────────────────────────────
   const toolbar = (
-    <div
-      className="table-toolbar"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: "10px",
-        flexWrap: "wrap",
-        padding: "10px 14px",
-      }}
-    >
-      <h3 style={{ margin: 0, fontSize: "13px", fontWeight: 600, whiteSpace: "nowrap" }}>
+    <div className="ut-toolbar">
+      {/* Left: title */}
+      <h3 className="ut-title">
         {tab === "blocked" ? "Block User list" : "All User list"}
       </h3>
 
-      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-        {/* Search pill */}
-        <label
-          className="searchbox small"
-          style={{ height: "30px", width: "160px", minWidth: "120px" }}
-        >
-          <Search />
+      {/* Right: controls */}
+      <div className="ut-controls">
+
+        {/* Search user */}
+        <label className="ut-pill" aria-label="Search users">
           <input
+            className="ut-pill__input"
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="Search User"
           />
-          {localSearch && (
+          {localSearch ? (
             <button
               type="button"
-              className="search-clear"
+              className="ut-pill__icon-btn"
               onClick={() => setLocalSearch("")}
+              title="Clear search"
             >
               <X />
             </button>
+          ) : (
+           ""
           )}
         </label>
 
-        {/* Block User tab pill */}
+        {/* Block User toggle */}
         <button
           type="button"
           onClick={() => setTab((t) => (t === "blocked" ? "all" : "blocked"))}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-            height: "30px",
-            padding: "0 14px",
-            border: 0,
-            borderRadius: "15px",
-            background: tab === "blocked" ? "#17181a" : "#17181a",
-            color: "#fff",
-            fontSize: "9px",
-            fontWeight: 600,
-            whiteSpace: "nowrap",
-            cursor: "pointer",
-          }}
+          className={`ut-block-pill${tab === "blocked" ? " ut-block-pill--active" : ""}`}
         >
+          {tab === "blocked" ? <Shield /> : <ShieldOff />}
           Block User({blockedCount})
         </button>
 
         {/* Date From */}
-        <label
-          className="searchbox small"
-          style={{ height: "30px", width: "130px", minWidth: "100px", gap: "6px" }}
-        >
-          <Calendar style={{ width: "13px", flexShrink: 0 }} />
+        <label className={`ut-pill ut-pill--date${dateFrom ? " ut-pill--filled" : ""}`} aria-label="Filter from date">
           <input
             type="date"
+            className="ut-pill__date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            style={{ fontSize: "9px", padding: 0, border: 0, background: "transparent", outline: 0, width: "100%", color: dateFrom ? "#333" : "#686c72" }}
+            title="From date"
           />
+          {/* <span className="ut-pill__icon"><Calendar /></span> */}
         </label>
 
-        <span style={{ fontSize: "9px", color: "#686c72" }}>To</span>
+        <span className="ut-sep">To</span>
 
         {/* Date To */}
-        <label
-          className="searchbox small"
-          style={{ height: "30px", width: "130px", minWidth: "100px", gap: "6px" }}
-        >
-          <Calendar style={{ width: "13px", flexShrink: 0 }} />
+        <label className={`ut-pill ut-pill--date${dateTo ? " ut-pill--filled" : ""}`} aria-label="Filter to date">
           <input
             type="date"
+            className="ut-pill__date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            style={{ fontSize: "9px", padding: 0, border: 0, background: "transparent", outline: 0, width: "100%", color: dateTo ? "#333" : "#686c72" }}
+            title="To date"
           />
+          {/* <span className="ut-pill__icon"><Calendar /></span> */}
         </label>
 
-        {(dateFrom || dateTo) && (
+        {/* Clear date filter */}
+        {hasDateFilter && (
           <button
             type="button"
-            className="search-clear"
+            className="ut-clear-date"
             onClick={() => { setDateFrom(""); setDateTo(""); }}
             title="Clear date filter"
           >
             <X />
           </button>
+        )}
+
+        {/* Navbar search active indicator */}
+        {topQuery && (
+          <span className="ut-nav-badge">
+            Searching: "{topQuery}"
+          </span>
         )}
       </div>
     </div>
@@ -192,7 +178,6 @@ export function UserTable() {
             const parts = joinDate.split("\n");
             const datePart = parts[0] ?? "";
             const timePart = parts[1] ?? "";
-
             const displayNo = String(idx + 1).padStart(2, "0");
 
             return (
@@ -200,10 +185,7 @@ export function UserTable() {
                 <td style={{ color: "#777", fontSize: "10px" }}>{displayNo}</td>
                 <td>
                   <div className="user-cell">
-                    <img
-                      src={avatars[avatarIdx % avatars.length]}
-                      alt=""
-                    />
+                    <img src={avatars[avatarIdx % avatars.length]} alt="" />
                     <strong>{user[1]}</strong>
                   </div>
                 </td>
@@ -220,27 +202,28 @@ export function UserTable() {
                   )}
                 </td>
                 <td>
-                  <button
-                    type="button"
-                    onClick={() => toggleBlock(user[0])}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      height: "28px",
-                      padding: "0 18px",
-                      border: 0,
-                      borderRadius: "14px",
-                      background: u.blocked ? "#17181a" : "#f2f3f4",
-                      color: u.blocked ? "#fff" : "#333",
-                      fontSize: "9px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      transition: "background .15s ease, color .15s ease",
-                    }}
-                  >
-                    {u.blocked ? "Unblock" : "Block"}
-                  </button>
+                  <div className="row-actions-group">
+                    {/* View Details */}
+                    <Link
+                      to={`/users/${user[0]}`}
+                      className="action-view-btn"
+                      title="View Details"
+                    >
+                      <Eye />
+                      <span>View</span>
+                    </Link>
+
+                    {/* Block / Unblock */}
+                    <button
+                      type="button"
+                      onClick={() => toggleBlock(user[0])}
+                      className={`action-block-btn${u.blocked ? " action-block-btn--blocked" : ""}`}
+                      title={u.blocked ? "Unblock user" : "Block user"}
+                    >
+                      {u.blocked ? <Shield /> : <ShieldOff />}
+                      <span>{u.blocked ? "Unblock" : "Block"}</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
             );
@@ -249,11 +232,7 @@ export function UserTable() {
             <tr>
               <td colSpan={7}>
                 <EmptyState
-                  label={
-                    tab === "blocked"
-                      ? "No blocked users"
-                      : "No users found"
-                  }
+                  label={tab === "blocked" ? "No blocked users" : "No users found"}
                 />
               </td>
             </tr>

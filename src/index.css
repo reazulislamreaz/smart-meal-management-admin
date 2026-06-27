@@ -365,6 +365,231 @@ textarea,
   font-size: 16px;
 }
 
+/* ═══════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════
+   User Table – Light toolbar (matches reference design)
+   ═══════════════════════════════════════════════════════════ */
+
+/* Toolbar: sticky, light-grey, same height as existing .table-toolbar */
+.ut-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 14px;
+  background: #f0f1f3;
+  border-bottom: 1px solid #dfe1e5;
+  border-radius: 7px 7px 0 0;
+  min-height: 46px;
+}
+
+.ut-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #17181a;
+  white-space: nowrap;
+}
+
+.ut-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Shared pill (Search User / date inputs) ─────────────── */
+.ut-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px;
+  border: 1px solid #d1d4d9;
+  border-radius: 15px;
+  background: #fff;
+  cursor: text;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.ut-pill:focus-within {
+  border-color: #17181a;
+  box-shadow: 0 0 0 2px rgba(23,24,26,.08);
+}
+.ut-pill--filled { border-color: #17181a; }
+
+.ut-pill__input {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #27292c;
+  font-size: 11px;
+  width: 110px;
+}
+.ut-pill__input::placeholder { color: #9a9da2; }
+
+.ut-pill__icon {
+  display: flex;
+  align-items: center;
+  color: #8a8d92;
+  flex-shrink: 0;
+}
+.ut-pill__icon svg { width: 13px; height: 13px; }
+
+.ut-pill__icon-btn {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 50%;
+  background: #e7e8eb;
+  color: #555;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .13s ease, color .13s ease;
+}
+.ut-pill__icon-btn svg { width: 10px; height: 10px; }
+.ut-pill__icon-btn:hover { background: #ff5361; color: #fff; }
+
+/* ── Date pill ───────────────────────────────────────────── */
+.ut-pill--date { cursor: pointer; }
+.ut-pill__date {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #27292c;
+  font-size: 11px;
+  width: 100px;
+  padding: 0;
+  cursor: pointer;
+}
+.ut-pill__date::-webkit-calendar-picker-indicator { opacity: 0.45; cursor: pointer; width: 13px; }
+
+/* ── Block User pill ─────────────────────────────────────── */
+.ut-block-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 13px;
+  border: 1px solid #d1d4d9;
+  border-radius: 15px;
+  background: #17181a;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .13s ease, border-color .13s ease;
+  white-space: nowrap;
+}
+.ut-block-pill svg { width: 12px; height: 12px; }
+.ut-block-pill:hover { background: #2e3035; }
+.ut-block-pill--active { background: #ff5361; border-color: #ff5361; }
+.ut-block-pill--active:hover { background: #e8404e; border-color: #e8404e; }
+
+/* ── "To" separator ──────────────────────────────────────── */
+.ut-sep {
+  font-size: 11px;
+  color: #8a8d92;
+  flex-shrink: 0;
+  font-weight: 500;
+}
+
+/* ── Clear date X button ─────────────────────────────────── */
+.ut-clear-date {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid #dfe1e4;
+  border-radius: 50%;
+  background: #fff;
+  color: #8a8d92;
+  padding: 0;
+  cursor: pointer;
+  transition: background .13s ease, color .13s ease, border-color .13s ease;
+}
+.ut-clear-date svg { width: 11px; height: 11px; }
+.ut-clear-date:hover { background: #ff5361; border-color: #ff5361; color: #fff; }
+
+/* ── Navbar search active badge ──────────────────────────── */
+.ut-nav-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 11px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 10px;
+  font-weight: 600;
+  border: 1px solid #bfdbfe;
+  white-space: nowrap;
+  animation: fadeIn .2s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Row action buttons: View + Block/Unblock
+   ═══════════════════════════════════════════════════════════ */
+.row-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* "View" – white pill with eye icon */
+.action-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 27px;
+  padding: 0 10px;
+  border-radius: 13px;
+  border: 1px solid #d0d3d8;
+  background: #fff;
+  color: #34363a;
+  font-size: 10px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .14s ease, border-color .14s ease, color .14s ease, box-shadow .14s ease;
+}
+.action-view-btn svg { width: 11px; height: 11px; }
+.action-view-btn:hover {
+  background: #17181a;
+  border-color: #17181a;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(23,24,26,.2);
+}
+
+/* "Block / Unblock" */
+.action-block-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 27px;
+  padding: 0 10px;
+  border-radius: 13px;
+  border: 1px solid #e5e7ea;
+  background: #f5f6f8;
+  color: #52565b;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .14s ease, border-color .14s ease, color .14s ease;
+}
+.action-block-btn svg { width: 11px; height: 11px; }
+.action-block-btn:hover { background: #ffe5e8; border-color: #ffb3b8; color: #e5484d; }
+.action-block-btn--blocked { background: #1a1c1f; border-color: #1a1c1f; color: #fff; }
+.action-block-btn--blocked:hover { background: #ff5361; border-color: #ff5361; color: #fff; }
+
 @media (min-width: 1600px) {
   .content { padding-inline: 32px; }
   .dashboard-grid, .dashboard-lower { gap: 20px; }
