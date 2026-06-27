@@ -78,13 +78,14 @@ export function TextSettings({ type }: { type: "privacy" | "about" }) {
 
         {isEditing ? (
           <>
+            <h3 style={{ margin: "0 0 12px", fontSize: "14px", fontWeight: 600 }}>
+              Edit {rawTitle}
+            </h3>
             <div
-              className="h-[22px] flex justify-end gap-[10px] text-[#555] [&_:is(b,i,u,span)]:cursor-default [&_:is(b,i,u,span)]:px-1 [&_:is(b,i,u,span)]:py-[2px] [&_:is(b,i,u,span)]:rounded-[2px] [&_:is(b,i,u,span)]:transition-[background,color] [&_:is(b,i,u,span)]:duration-150 [&_:is(b,i,u,span):hover]:bg-[#f0f1f3] [&_:is(b,i,u,span):hover]:text-[#17181a]"
+              className="flex justify-start flex-wrap gap-[8px] text-[#555] [&_:is(b,i,u,span)]:cursor-default [&_:is(b,i,u,span)]:px-1 [&_:is(b,i,u,span)]:py-[2px] [&_:is(b,i,u,span)]:rounded-[2px] [&_:is(b,i,u,span)]:transition-[background,color] [&_:is(b,i,u,span)]:duration-150 [&_:is(b,i,u,span):hover]:bg-[#f0f1f3] [&_:is(b,i,u,span):hover]:text-[#17181a]"
               style={{
-                display: "flex",
-                gap: "8px",
                 borderBottom: "1px solid #eceef0",
-                paddingBottom: "8px",
+                paddingBottom: "10px",
                 marginBottom: "12px",
               }}
             >
@@ -134,9 +135,6 @@ export function TextSettings({ type }: { type: "privacy" | "about" }) {
                 <u>U</u>
               </button>
             </div>
-            <h3 style={{ margin: "0 0 12px", fontSize: "14px", fontWeight: 600 }}>
-              Edit {rawTitle}
-            </h3>
             <textarea
               ref={textareaRef}
               aria-label={rawTitle}

@@ -151,7 +151,23 @@ export function SubscriptionForm({ edit = false }: { edit?: boolean }) {
               width: "100%",
               marginTop: "4px",
             }}
-          ></div>
+          >
+            <input
+              value={featureDraft}
+              onChange={(event) => setFeatureDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  addFeature(featureDraft);
+                }
+              }}
+              placeholder="e.g. Nutrition tracker"
+              style={{ flex: 1 }}
+            />
+            <button type="button" onClick={() => addFeature(featureDraft)}>
+              Add
+            </button>
+          </div>
         </label>
 
         <div
