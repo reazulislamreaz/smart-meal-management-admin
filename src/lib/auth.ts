@@ -5,10 +5,11 @@ export interface UserProfile {
   email: string;
   firstName: string;
   lastName: string;
-  role: string;
+  role: "SUPER_ADMIN" | "USER";
+  weeklyBudget?: number;
+  cuisinePreferences?: string[];
+  dietaryRestrictions?: string[];
   avatarUrl?: string;
-  ownedHouseholds?: any[];
-  householdMembers?: any[];
 }
 
 export interface AuthResponse {
@@ -66,7 +67,10 @@ export async function loginApi(email: string, password: string, remember = false
   }
 
   // Fallback to local demo credentials if server is not running
-  if (email.trim().toLowerCase() === "admin@sizzl.com" && password === "admin123") {
+  if (
+    (email.trim().toLowerCase() === "admin@sizzl.com" || email.trim().toLowerCase() === "admin@smartmeal.com") &&
+    (password === "admin123" || password === "AdminPassword123!")
+  ) {
     const demoResponse: AuthResponse = {
       accessToken: "demo_access_token_jwt",
       refreshToken: "demo_refresh_token_jwt",
@@ -74,7 +78,7 @@ export async function loginApi(email: string, password: string, remember = false
       expiresIn: 3600,
       user: {
         id: "demo-admin-id",
-        email: "admin@sizzl.com",
+        email: email.trim().toLowerCase(),
         firstName: "Sizzl",
         lastName: "Admin",
         role: "SUPER_ADMIN",
