@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { loginApi } from "@/lib/auth";
 
-// Demo credentials
 const DEMO_EMAIL = "admin@sizzl.com";
 const DEMO_PASSWORD = "admin123";
 
@@ -27,20 +27,15 @@ export function LoginPage({ onLogin }: Props) {
     }
 
     setLoading(true);
-    // Simulate a short network delay
-    await new Promise((r) => setTimeout(r, 600));
 
-    if (
-      email.trim().toLowerCase() === DEMO_EMAIL &&
-      password === DEMO_PASSWORD
-    ) {
-      if (remember) localStorage.setItem("sizzl-auth", "1");
-      else sessionStorage.setItem("sizzl-auth", "1");
+    try {
+      await loginApi(email.trim(), password, remember);
       onLogin();
-    } else {
-      setError("Incorrect email or password.");
+    } catch (err: any) {
+      setError(err?.message || "Incorrect email or password.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const fieldClass =
