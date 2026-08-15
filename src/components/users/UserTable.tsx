@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
-import {  X, Eye, ShieldOff, Shield } from "lucide-react";
+import { X, Eye, ShieldOff, Shield } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useStoredState } from "@/hooks/useStoredState";
-import { users, avatars } from "@/data/adminData";
+import { users as defaultUsers, avatars } from "@/data/adminData";
+import { adminApi, type AdminUserItem } from "@/lib/adminApi";
 import EmptyState from "@/components/common/EmptyState";
 import Pagination from "@/components/common/Pagination";
 
@@ -30,14 +31,57 @@ export function UserTable() {
   // navbar search takes priority over local search
   const query = topQuery || localSearch.toLowerCase();
 
-  // Combined list with block state
-  const allUsers = useMemo(
-    () => users.map((u) => ({ data: u, blocked: blockedIds.includes(u[0]) })),
+  // Local fallback users state
+  const [apiUsers, setApiUsers] = useState<AdminUserItem[]>([]);
+  const [useApi, setUseApi] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    adminApi
+      .getUsers({
+        search: query,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+        isBlocked: tab === "blocked" ? true : undefined,
+      })
+      .then((res) => {
+        if (!isMounted || !res?.data) return;
+        setApiUsers(res.data);
+        setUseApi(true);
+      })
+      .catch((err) => {
+        console.warn("Could not load users from backend, using fallback dataset:", err.message);
+        setUseApi(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [query, tab, dateFrom, dateTo]);
+
+  // Combined fallback list with block state
+  const fallbackUsers = useMemo(
+    () => defaultUsers.map((u) => ({ data: u, blocked: blockedIds.includes(u[0]) })),
     [blockedIds],
   );
 
   const displayList = useMemo(() => {
-    return allUsers
+    if (useApi && apiUsers.length > 0) {
+      return apiUsers.map((u) => ({
+        data: [
+          u.no || u.id,
+          u.name,
+          u.email,
+          u.phoneNumber,
+          u.address,
+          `${u.joiningDate}\n${u.joiningTime || ""}`,
+        ],
+        rawId: u.id,
+        blocked: u.isBlocked || blockedIds.includes(u.id) || blockedIds.includes(u.no),
+      }));
+    }
+
+    return fallbackUsers
       .filter((u) => (tab === "blocked" ? u.blocked : true))
       .filter((u) => {
         if (!query) return true;
@@ -49,21 +93,34 @@ export function UserTable() {
         if (dateFrom && joining < dateFrom) return false;
         if (dateTo && joining > dateTo) return false;
         return true;
-      });
-  }, [allUsers, tab, query, dateFrom, dateTo]);
+      })
+      .map((u) => ({ ...u, rawId: u.data[0] }));
+  }, [useApi, apiUsers, fallbackUsers, tab, query, dateFrom, dateTo, blockedIds]);
 
   const pageCount = Math.max(1, Math.ceil(displayList.length / pageSize));
   const visible = displayList.slice((page - 1) * pageSize, page * pageSize);
 
   useEffect(() => setPage(1), [tab, query, dateFrom, dateTo]);
 
-  const blockedCount = blockedIds.length;
+  const blockedCount = displayList.filter((u) => u.blocked).length || blockedIds.length;
   const hasDateFilter = !!(dateFrom || dateTo);
 
-  const toggleBlock = (id: string) => {
+  const toggleBlock = async (id: string, rawId?: string) => {
+    const targetId = rawId || id;
+    const isCurrentlyBlocked = blockedIds.includes(id) || blockedIds.includes(targetId);
+
     setBlockedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+      prev.includes(id) || prev.includes(targetId)
+        ? prev.filter((x) => x !== id && x !== targetId)
+        : [...prev, id],
     );
+
+    // Call backend API if possible
+    try {
+      await adminApi.toggleUserBlock(targetId, !isCurrentlyBlocked);
+    } catch (e) {
+      console.warn("Backend toggleUserBlock call handled locally:", e);
+    }
   };
 
   // ─── Shared class strings ────────────────────────────────────────────────
@@ -86,7 +143,6 @@ export function UserTable() {
 
       {/* Right: controls */}
       <div className="flex items-center gap-2 flex-wrap">
-
         {/* Search user */}
         <label
           className="inline-flex flex-row items-center gap-[6px] h-[30px] px-[11px] border border-[#d1d4d9] rounded-[15px] bg-white cursor-text transition-[border-color,box-shadow] duration-150 focus-within:border-[#17181a] focus-within:shadow-[0_0_0_2px_rgba(23,24,26,.08)]"
@@ -108,7 +164,7 @@ export function UserTable() {
               <X />
             </button>
           ) : (
-           ""
+            ""
           )}
         </label>
 
@@ -151,7 +207,10 @@ export function UserTable() {
           <button
             type="button"
             className="grid place-items-center w-[22px] h-[22px] border border-[#dfe1e4] rounded-full bg-white text-[#8a8d92] p-0 cursor-pointer transition-[background,color,border-color] duration-130 hover:bg-[#ff5361] hover:border-[#ff5361] hover:text-white [&_svg]:w-[11px] [&_svg]:h-[11px]"
-            onClick={() => { setDateFrom(""); setDateTo(""); }}
+            onClick={() => {
+              setDateFrom("");
+              setDateTo("");
+            }}
             title="Clear date filter"
           >
             <X />
@@ -170,13 +229,18 @@ export function UserTable() {
 
   // ─── Table ─────────────────────────────────────────────────────────────────
   return (
-    <section className="bg-white border border-[#e5e7ea] rounded-[7px] max-w-full mt-[15px] overflow-x-auto overflow-y-hidden" style={{ marginTop: "15px" }}>
+    <section
+      className="bg-white border border-[#e5e7ea] rounded-[7px] max-w-full mt-[15px] overflow-x-auto overflow-y-hidden"
+      style={{ marginTop: "15px" }}
+    >
       {toolbar}
       <table>
         <thead>
           <tr>
             {["No", "User Name", "Email", "Phone Number", "Address", "Joining Date", "Action"].map(
-              (h) => <th key={h}>{h}</th>,
+              (h) => (
+                <th key={h}>{h}</th>
+              ),
             )}
           </tr>
         </thead>
@@ -184,7 +248,7 @@ export function UserTable() {
           {visible.map((u, i) => {
             const idx = (page - 1) * pageSize + i;
             const user = u.data;
-            const avatarIdx = parseInt(user[0], 10) - 1;
+            const avatarIdx = parseInt(user[0], 10) - 1 || i;
             const joinDate = user[5] ?? "";
             const parts = joinDate.split("\n");
             const datePart = parts[0] ?? "";
@@ -192,12 +256,12 @@ export function UserTable() {
             const displayNo = String(idx + 1).padStart(2, "0");
 
             return (
-              <tr key={user[0]}>
+              <tr key={user[0] + i}>
                 <td style={{ color: "#777", fontSize: "10px" }}>{displayNo}</td>
                 <td>
                   <div className="flex items-center gap-[7px]">
                     <img
-                      src={avatars[avatarIdx % avatars.length]}
+                      src={avatars[Math.abs(avatarIdx) % avatars.length]}
                       alt=""
                       className="w-[22px] h-[22px] rounded-full object-cover"
                     />
@@ -220,7 +284,7 @@ export function UserTable() {
                   <div className="flex items-center gap-[6px]">
                     {/* View Details */}
                     <Link
-                      to={`/users/${user[0]}`}
+                      to={`/users/${u.rawId || user[0]}`}
                       className="inline-flex items-center gap-1 h-[27px] px-[10px] rounded-[13px] border border-[#d0d3d8] bg-white text-[#34363a] text-[10px] font-semibold no-underline whitespace-nowrap cursor-pointer transition-[background,border-color,color,box-shadow] duration-140 hover:bg-[#17181a] hover:border-[#17181a] hover:text-white hover:shadow-[0_2px_8px_rgba(23,24,26,.2)] [&_svg]:w-[11px] [&_svg]:h-[11px]"
                       title="View Details"
                     >
@@ -231,7 +295,7 @@ export function UserTable() {
                     {/* Block / Unblock */}
                     <button
                       type="button"
-                      onClick={() => toggleBlock(user[0])}
+                      onClick={() => toggleBlock(user[0], u.rawId)}
                       className={`inline-flex items-center gap-1 h-[27px] px-[10px] rounded-[13px] border text-[10px] font-semibold cursor-pointer whitespace-nowrap transition-[background,border-color,color] duration-140 [&_svg]:w-[11px] [&_svg]:h-[11px] ${u.blocked ? "bg-[#1a1c1f] border-[#1a1c1f] text-white hover:bg-[#ff5361] hover:border-[#ff5361] hover:text-white" : "border-[#e5e7ea] bg-[#f5f6f8] text-[#52565b] hover:bg-[#ffe5e8] hover:border-[#ffb3b8] hover:text-[#e5484d]"}`}
                       title={u.blocked ? "Unblock user" : "Block user"}
                     >

@@ -3,7 +3,7 @@ import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { loginApi } from "@/lib/auth";
 
 const DEMO_EMAIL = "admin@sizzl.com";
-const DEMO_PASSWORD = "admin123";
+const DEMO_PASSWORD = "AdminPassword123!";
 
 interface Props {
   onLogin: () => void;

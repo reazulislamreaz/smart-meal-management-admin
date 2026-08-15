@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { RefreshCw, Pencil, Check } from "lucide-react";
 import { useAppData } from "@/context/AppDataContext";
 import { defaultAppConfig } from "@/data/adminData";
+import { adminApi } from "@/lib/adminApi";
 import SettingsToast from "@/components/common/SettingsToast";
 import SettingsLayout from "@/components/settings/SettingsLayout";
 
@@ -22,16 +23,36 @@ export function AppConfiguration() {
     setConfirmReset(true);
   };
 
-  const confirmResetDefaults = () => {
+  const confirmResetDefaults = async () => {
     setDraftConfig(defaultAppConfig);
     setAppConfig(defaultAppConfig);
     setConfirmReset(false);
     setSuccess("Configurations reset to default values.");
+    try {
+      await adminApi.updateAppConfig({
+        trialDays: defaultAppConfig.trialDays,
+        defaultHousehold: defaultAppConfig.defaultHousehold,
+        aiModel: defaultAppConfig.aiModel,
+        maxSuggestions: defaultAppConfig.maxSuggestions,
+      });
+    } catch (e) {
+      console.warn("Backend reset config call handled locally:", e);
+    }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setAppConfig(draftConfig);
     setSuccess("App Configuration updated successfully.");
+    try {
+      await adminApi.updateAppConfig({
+        trialDays: draftConfig.trialDays,
+        defaultHousehold: draftConfig.defaultHousehold,
+        aiModel: draftConfig.aiModel,
+        maxSuggestions: draftConfig.maxSuggestions,
+      });
+    } catch (e) {
+      console.warn("Backend updateAppConfig call handled locally:", e);
+    }
   };
 
   const handleDiscard = () => {
@@ -44,13 +65,21 @@ export function AppConfiguration() {
     setBannerValue(currentValue);
   };
 
-  const handleSaveBanner = (key: string) => {
-    setBannersCopy((current) => ({
-      ...current,
+  const handleSaveBanner = async (key: string) => {
+    const nextBanners = {
+      ...bannersCopy,
       [key]: bannerValue.trim(),
-    }));
+    };
+    setBannersCopy(nextBanners);
     setEditingBanner(null);
     setSuccess("Banner text updated successfully.");
+    try {
+      await adminApi.updateAppConfig({
+        bannersCopy: nextBanners,
+      });
+    } catch (e) {
+      console.warn("Backend updateAppConfig banner call handled locally:", e);
+    }
   };
 
   const handleCancelBanner = () => {

@@ -1,28 +1,75 @@
+import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useStoredState } from "@/hooks/useStoredState";
 import { users, avatars } from "@/data/adminData";
+import { adminApi, type AdminUserDetails } from "@/lib/adminApi";
 
 export function DetailCard({ earnings = false }: { earnings?: boolean }) {
   const { id } = useParams();
-  const user = users.find((item) => item[0] === id) ?? users[0];
-  const avatarIdx = (Number(user[0]) - 1) % avatars.length;
+  const fallbackUser = users.find((item) => item[0] === id) ?? users[0];
+  const avatarIdx = (Number(fallbackUser[0]) - 1 || 0) % avatars.length;
+
+  const [apiUser, setApiUser] = useState<AdminUserDetails | null>(null);
 
   const [blockedIds, setBlockedIds] = useStoredState<string[]>(
     "sizzl-blocked-users",
     ["03", "05"],
   );
-  const isBlocked = blockedIds.includes(user[0]);
 
-  const toggleBlock = () => {
+  useEffect(() => {
+    let isMounted = true;
+    if (id) {
+      adminApi
+        .getUserDetails(id)
+        .then((data) => {
+          if (isMounted && data) {
+            setApiUser(data);
+          }
+        })
+        .catch((err) => {
+          console.warn("Could not load user details from backend:", err.message);
+        });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
+  const targetId = id || fallbackUser[0];
+  const isBlocked =
+    apiUser?.isBlocked !== undefined
+      ? apiUser.isBlocked
+      : blockedIds.includes(targetId) || blockedIds.includes(fallbackUser[0]);
+
+  const toggleBlock = async () => {
+    const nextBlocked = !isBlocked;
     setBlockedIds((prev) =>
-      prev.includes(user[0])
-        ? prev.filter((x) => x !== user[0])
-        : [...prev, user[0]],
+      prev.includes(targetId)
+        ? prev.filter((x) => x !== targetId)
+        : [...prev, targetId],
     );
+
+    if (apiUser) {
+      setApiUser({ ...apiUser, isBlocked: nextBlocked });
+    }
+
+    try {
+      await adminApi.toggleUserBlock(targetId, nextBlocked);
+    } catch (e) {
+      console.warn("Backend toggleUserBlock call handled locally:", e);
+    }
   };
 
-  const joiningDate = (user[5] ?? "").split("\n")[0];
+  const displayName = apiUser?.name || fallbackUser[1];
+  const displayAddress = apiUser?.address || fallbackUser[4];
+  const displayEmail = apiUser?.email || fallbackUser[2];
+  const displayPhone = apiUser?.phoneNumber || fallbackUser[3];
+  const displayJoiningDate = apiUser?.joiningDate || (fallbackUser[5] ?? "").split("\n")[0];
+  const displayPlan = apiUser?.currentPlan || "Annual";
+  const displayAvatar = apiUser?.avatar || avatars[avatarIdx];
+  const activeMeals = apiUser?.activeMeals ?? 10;
+  const totalSpend = apiUser?.totalSpend ?? "$5.00";
 
   return (
     <div className="max-w-[720px] mx-auto my-[10px] max-[620px]:w-full">
@@ -34,12 +81,15 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
       </Link>
 
       {/* ── Identity card ───────────────────────────────────────────── */}
-      <div className="bg-white border border-[#e5e7ea] rounded-[7px] flex justify-between items-center px-[18px] py-[15px]" style={{ flexDirection: "column", alignItems: "center", gap: "14px", padding: "28px 18px 22px" }}>
+      <div
+        className="bg-white border border-[#e5e7ea] rounded-[7px] flex justify-between items-center px-[18px] py-[15px]"
+        style={{ flexDirection: "column", alignItems: "center", gap: "14px", padding: "28px 18px 22px" }}
+      >
         {/* Avatar */}
         <div style={{ position: "relative" }}>
           <img
-            src={avatars[avatarIdx]}
-            alt={user[1]}
+            src={displayAvatar}
+            alt={displayName}
             style={{
               width: "90px",
               height: "90px",
@@ -67,7 +117,7 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
         {/* Name + badge */}
         <div style={{ textAlign: "center" }}>
           <strong style={{ fontSize: "16px", display: "block", marginBottom: "8px" }}>
-            {user[1]}
+            {displayName}
           </strong>
           <span
             style={{
@@ -109,11 +159,11 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
       <div className="grid grid-cols-2 gap-3 my-[14px] max-[420px]:grid-cols-1" style={{ marginTop: "14px" }}>
         <div className="h-[75px] rounded-[6px] bg-white border border-[#e5e7ea] p-[13px] flex flex-col gap-[7px]">
           <span className="text-[#666a70] text-[12px]">Active Meals</span>
-          <strong className="text-[20px]">10</strong>
+          <strong className="text-[20px]">{activeMeals}</strong>
         </div>
         <div className="h-[75px] rounded-[6px] bg-white border border-[#e5e7ea] p-[13px] flex flex-col gap-[7px]">
           <span className="text-[#666a70] text-[12px]">Total Spend</span>
-          <strong className="text-[20px]">$5.00</strong>
+          <strong className="text-[20px]">{totalSpend}</strong>
         </div>
       </div>
 
@@ -124,27 +174,27 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
           <div className="grid grid-cols-4 gap-5 max-[1100px]:grid-cols-2 max-[420px]:grid-cols-1">
             <div className="flex flex-col gap-[5px] min-w-0">
               <span className="text-[#666a70] text-[12px]">Name</span>
-              <strong className="text-[12px] wrap-anywhere">{user[1]}</strong>
+              <strong className="text-[12px] wrap-anywhere">{displayName}</strong>
             </div>
             <div className="flex flex-col gap-[5px] min-w-0">
               <span className="text-[#666a70] text-[12px]">Address</span>
-              <strong className="text-[12px] wrap-anywhere">{user[4]}</strong>
+              <strong className="text-[12px] wrap-anywhere">{displayAddress}</strong>
             </div>
             <div className="flex flex-col gap-[5px] min-w-0">
               <span className="text-[#666a70] text-[12px]">Email</span>
-              <strong className="text-[12px] wrap-anywhere">{user[2]}</strong>
+              <strong className="text-[12px] wrap-anywhere">{displayEmail}</strong>
             </div>
             <div className="flex flex-col gap-[5px] min-w-0">
               <span className="text-[#666a70] text-[12px]">Phone number</span>
-              <strong className="text-[12px] wrap-anywhere">{user[3]}</strong>
+              <strong className="text-[12px] wrap-anywhere">{displayPhone}</strong>
             </div>
             <div className="flex flex-col gap-[5px] min-w-0">
               <span className="text-[#666a70] text-[12px]">Joining Date</span>
-              <strong className="text-[12px] wrap-anywhere">{joiningDate}</strong>
+              <strong className="text-[12px] wrap-anywhere">{displayJoiningDate}</strong>
             </div>
             <div className="flex flex-col gap-[5px] min-w-0">
               <span className="text-[#666a70] text-[12px]">Current plan</span>
-              <strong className="text-[12px] wrap-anywhere approved">Annual</strong>
+              <strong className="text-[12px] wrap-anywhere approved">{displayPlan}</strong>
             </div>
           </div>
         </section>
@@ -153,10 +203,10 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
           <h3 className="m-0 mb-4 text-[16px]">Subscription Buying Information</h3>
           <div className="grid grid-cols-3 gap-x-5 gap-y-6 max-[620px]:grid-cols-2 max-[420px]:grid-cols-1">
             {[
-              ["Subscription Type", "Annual"],
+              ["Subscription Type", displayPlan],
               ["Buying date", "12/12/24"],
               ["Current Period Start Date", "15 Feb 2025"],
-              ["Transaction ID", "TXN1454"],
+              ["Transaction ID", `TXN${targetId.slice(0, 4)}`],
               ["Withdraw Amount", "$120"],
               ["Subscription Expired", "15 Jan 2026"],
               ["Current Plan Meal ID", "Trial"],

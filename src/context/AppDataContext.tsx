@@ -1,6 +1,7 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useMemo,
   type ReactNode,
 } from "react";
@@ -14,6 +15,7 @@ import {
   defaultAppConfig,
   defaultBannersCopy,
 } from "@/data/adminData";
+import { adminApi } from "@/lib/adminApi";
 
 const AppDataContext = createContext<AppData | null>(null);
 
@@ -49,6 +51,30 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     "sizzl-bannerscopy",
     defaultBannersCopy,
   );
+
+  // Fetch live settings on load
+  useEffect(() => {
+    let isMounted = true;
+    adminApi
+      .getSettings()
+      .then((settings) => {
+        if (!isMounted || !settings) return;
+        if (settings.profile) setProfile(settings.profile);
+        if (settings.preferences) setPreferences(settings.preferences);
+        if (settings.privacy) setPrivacy(settings.privacy);
+        if (settings.about) setAbout(settings.about);
+        if (settings.contact) setContact(settings.contact);
+        if (settings.appConfig) setAppConfig(settings.appConfig);
+        if (settings.bannersCopy) setBannersCopy(settings.bannersCopy);
+      })
+      .catch((err) => {
+        console.warn("Could not load remote admin settings, using local defaults:", err.message);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const value = useMemo(
     () => ({

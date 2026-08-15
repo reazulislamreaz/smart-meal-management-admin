@@ -1,11 +1,57 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { adminApi } from "@/lib/adminApi";
 
-export function BarChart({ title = "User ratio" }: { title?: string }) {
+export interface BarChartProps {
+  title?: string;
+  annuallyBars?: number[];
+  monthlyBars?: number[];
+}
+
+export function BarChart({
+  title = "User ratio",
+  annuallyBars,
+  monthlyBars,
+}: BarChartProps) {
   const [period, setPeriod] = useState<"monthly" | "annually">("annually");
+  const [chartData, setChartData] = useState<{
+    annually: number[];
+    monthly: number[];
+  }>({
+    annually: [46, 58, 86, 61, 45, 61, 34, 43, 55, 71, 36, 53],
+    monthly: [40, 53, 72, 56, 63, 48, 67, 58, 45, 64, 51, 69],
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    if (annuallyBars && monthlyBars) {
+      setChartData({ annually: annuallyBars, monthly: monthlyBars });
+    } else {
+      adminApi
+        .getEarningsOverview()
+        .then((res) => {
+          if (!isMounted || !res?.chartData) return;
+          if (res.chartData.annually && res.chartData.monthly) {
+            setChartData({
+              annually: res.chartData.annually,
+              monthly: res.chartData.monthly,
+            });
+          }
+        })
+        .catch((err) => {
+          console.warn("Could not load chart data from backend:", err.message);
+        });
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [annuallyBars, monthlyBars]);
+
   const bars =
     period === "annually"
-      ? [46, 58, 86, 61, 45, 61, 34, 43, 55, 71, 36, 53]
-      : [40, 53, 72, 56, 63, 48, 67, 58, 45, 64, 51, 69];
+      ? chartData.annually
+      : chartData.monthly;
+
   return (
     <section className="bg-white border border-[#e5e7ea] rounded-[7px] min-w-0 mt-[15px] pt-[15px] px-[14px] pb-[10px] overflow-x-auto">
       <div className="flex items-center justify-between">

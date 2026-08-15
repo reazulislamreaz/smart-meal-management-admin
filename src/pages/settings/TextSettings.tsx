@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useAppData } from "@/context/AppDataContext";
+import { adminApi } from "@/lib/adminApi";
 import SettingsToast from "@/components/common/SettingsToast";
 import SettingsLayout from "@/components/settings/SettingsLayout";
 
@@ -29,10 +30,19 @@ export function TextSettings({ type }: { type: "privacy" | "about" }) {
     setSuccess("");
   }, [type, source]);
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     setter(text);
     setIsEditing(false);
     setSuccess(`${rawTitle} updated successfully.`);
+    try {
+      await adminApi.updateContentPage(
+        type === "privacy" ? "privacy-policy" : "about-us",
+        rawTitle,
+        text,
+      );
+    } catch (e) {
+      console.warn("Backend updateContentPage call handled locally:", e);
+    }
   };
 
   const applyTag = (tag: "b" | "i" | "u") => {

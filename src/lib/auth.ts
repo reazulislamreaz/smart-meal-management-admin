@@ -10,6 +10,8 @@ export interface UserProfile {
   cuisinePreferences?: string[];
   dietaryRestrictions?: string[];
   avatarUrl?: string;
+  phoneNumber?: string;
+  address?: string;
 }
 
 export interface AuthResponse {
@@ -34,6 +36,7 @@ export function setStoredTokens(accessToken: string, refreshToken: string, remem
   const storage = remember ? localStorage : sessionStorage;
   storage.setItem(TOKEN_KEY, accessToken);
   storage.setItem(REFRESH_KEY, refreshToken);
+  storage.setItem("sizzl-auth", "1");
   if (user) {
     storage.setItem(USER_KEY, JSON.stringify(user));
   }
@@ -43,59 +46,50 @@ export function clearStoredTokens() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(REFRESH_KEY);
   localStorage.removeItem(USER_KEY);
+  localStorage.removeItem("sizzl-auth");
   sessionStorage.removeItem(TOKEN_KEY);
   sessionStorage.removeItem(REFRESH_KEY);
   sessionStorage.removeItem(USER_KEY);
+  sessionStorage.removeItem("sizzl-auth");
 }
 
 export async function loginApi(email: string, password: string, remember = false): Promise<AuthResponse> {
-  try {
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+  const cleanEmail = email.trim();
+  const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: cleanEmail, password }),
+  });
 
-    if (res.ok) {
-      const result = await res.json();
-      const authData = result.data;
-      setStoredTokens(authData.accessToken, authData.refreshToken, remember, authData.user);
-      return authData;
-    }
-  } catch (e) {
-    console.warn("Backend server connection failed, checking demo fallback...", e);
+  const jsonResult = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    const errorMsg =
+      jsonResult?.message ||
+      (Array.isArray(jsonResult?.message) ? jsonResult.message.join(", ") : null) ||
+      "Invalid email or password.";
+    throw new Error(errorMsg);
   }
 
-  // Fallback to local demo credentials if server is not running
-  if (
-    (email.trim().toLowerCase() === "admin@sizzl.com" || email.trim().toLowerCase() === "admin@smartmeal.com") &&
-    (password === "admin123" || password === "AdminPassword123!")
-  ) {
-    const demoResponse: AuthResponse = {
-      accessToken: "demo_access_token_jwt",
-      refreshToken: "demo_refresh_token_jwt",
-      tokenType: "Bearer",
-      expiresIn: 3600,
-      user: {
-        id: "demo-admin-id",
-        email: email.trim().toLowerCase(),
-        firstName: "Sizzl",
-        lastName: "Admin",
-        role: "SUPER_ADMIN",
-      },
-    };
-    setStoredTokens(demoResponse.accessToken, demoResponse.refreshToken, remember, demoResponse.user);
-    return demoResponse;
+  const authData = jsonResult.data;
+  if (!authData || !authData.accessToken) {
+    throw new Error("Invalid response received from authentication server.");
   }
 
-  throw new Error("Invalid email or password.");
+  // Strictly enforce SUPER_ADMIN role
+  if (authData.user?.role !== "SUPER_ADMIN") {
+    throw new Error("Access denied. Super Admin credentials required to access the Admin Panel.");
+  }
+
+  setStoredTokens(authData.accessToken, authData.refreshToken, remember, authData.user);
+  return authData;
 }
 
 export async function fetchProfileApi(): Promise<UserProfile | null> {
   const { token } = getStoredTokens();
   if (!token || token.startsWith("demo_")) {
-    const userJson = localStorage.getItem(USER_KEY) || sessionStorage.getItem(USER_KEY);
-    return userJson ? JSON.parse(userJson) : null;
+    clearStoredTokens();
+    return null;
   }
 
   try {
@@ -107,7 +101,10 @@ export async function fetchProfileApi(): Promise<UserProfile | null> {
 
     if (res.ok) {
       const result = await res.json();
-      return result.data;
+      const user = result.data;
+      if (user && user.role === "SUPER_ADMIN") {
+        return user;
+      }
     }
   } catch (e) {
     console.error("Failed to fetch profile", e);

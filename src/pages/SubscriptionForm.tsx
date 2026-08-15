@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useStoredState } from "@/hooks/useStoredState";
 import { initialPlans } from "@/data/adminData";
+import { adminApi } from "@/lib/adminApi";
 import type { SubscriptionPlan } from "@/types/admin";
 
 export function SubscriptionForm({ edit = false }: { edit?: boolean }) {
@@ -25,6 +26,27 @@ export function SubscriptionForm({ edit = false }: { edit?: boolean }) {
   );
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    if (edit && id) {
+      adminApi
+        .getSubscriptionPlan(id)
+        .then((plan) => {
+          if (plan) {
+            setName(plan.name);
+            setPrice(plan.price);
+            setDuration(plan.duration);
+            setDescription(plan.description || "");
+            if (plan.features && plan.features.length > 0) {
+              setPlanFeatures(plan.features);
+            }
+          }
+        })
+        .catch((err) => {
+          console.warn("Could not load plan from backend, using local draft:", err.message);
+        });
+    }
+  }, [edit, id]);
+
   const addFeature = (value: string) => {
     const trimmed = value.trim();
     if (!trimmed) return;
@@ -41,7 +63,7 @@ export function SubscriptionForm({ edit = false }: { edit?: boolean }) {
     setFeatureDraft("");
   };
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setError("");
 
@@ -71,6 +93,16 @@ export function SubscriptionForm({ edit = false }: { edit?: boolean }) {
         ? current.map((item) => (item.id === existing.id ? plan : item))
         : [...current, plan],
     );
+
+    try {
+      if (edit && id) {
+        await adminApi.updateSubscriptionPlan(id, plan);
+      } else {
+        await adminApi.createSubscriptionPlan(plan);
+      }
+    } catch (e) {
+      console.warn("Backend subscription plan save call handled locally:", e);
+    }
 
     navigate("/subscription/plans", {
       state: {

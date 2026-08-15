@@ -1,11 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Eye } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { getUserSubscription } from "@/utils/helpers";
-import { users, avatars } from "@/data/adminData";
+import { users as defaultUsers, avatars } from "@/data/adminData";
+import { adminApi, type EarningsSubscriberItem } from "@/lib/adminApi";
 import EmptyState from "@/components/common/EmptyState";
 import Pagination from "@/components/common/Pagination";
-import { Eye } from "lucide-react";
 
 export function EarningsTable() {
   const [searchParams] = useSearchParams();
@@ -15,9 +15,35 @@ export function EarningsTable() {
   const [subscription, setSubscription] = useState<"All" | "Annual" | "Monthly">("All");
   const pageSize = 4;
 
-  const filteredUsers = useMemo(
+  const [apiSubscribers, setApiSubscribers] = useState<EarningsSubscriberItem[]>([]);
+  const [useApi, setUseApi] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    adminApi
+      .getEarningsSubscribers({
+        search: query,
+        subscriptionType: subscription !== "All" ? subscription : undefined,
+        sortOrder,
+      })
+      .then((res) => {
+        if (!isMounted || !res?.data) return;
+        setApiSubscribers(res.data);
+        setUseApi(true);
+      })
+      .catch((err) => {
+        console.warn("Could not load earnings from backend, using fallback:", err.message);
+        setUseApi(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [query, subscription, sortOrder]);
+
+  const fallbackUsers = useMemo(
     () =>
-      users
+      defaultUsers
         .filter((user) => {
           if (!query) return true;
           return user.join(" ").toLowerCase().includes(query);
@@ -30,12 +56,37 @@ export function EarningsTable() {
           sortOrder === "asc"
             ? a[5].localeCompare(b[5])
             : b[5].localeCompare(a[5]),
-        ),
+        )
+        .map((user, i) => ({
+          id: user[0],
+          rawId: user[0],
+          sl: user[0],
+          userName: user[1].split(" ")[0],
+          email: user[2],
+          avatar: avatars[i % avatars.length],
+          subscriptionType: getUserSubscription(user[0]),
+          price: `$${[10.99, 29.99, 49.99][i % 3]}`,
+          expireDate: user[5].split("\n")[0],
+          expireTime: "02:20PM",
+        })),
     [query, sortOrder, subscription],
   );
 
-  const pageCount = Math.max(1, Math.ceil(filteredUsers.length / pageSize));
-  const visibleUsers = filteredUsers.slice((page - 1) * pageSize, page * pageSize);
+  const displayList = (useApi && apiSubscribers.length > 0) ? apiSubscribers.map((item) => ({
+    id: item.id,
+    rawId: item.userId || item.id,
+    sl: item.sl,
+    userName: item.userName.split(" ")[0],
+    email: item.email,
+    avatar: item.avatar,
+    subscriptionType: item.subscriptionType,
+    price: item.price,
+    expireDate: item.expireDate,
+    expireTime: item.expireTime || "02:20PM",
+  })) : fallbackUsers;
+
+  const pageCount = Math.max(1, Math.ceil(displayList.length / pageSize));
+  const visibleUsers = displayList.slice((page - 1) * pageSize, page * pageSize);
 
   useEffect(() => setPage(1), [query, subscription, sortOrder]);
 
@@ -80,37 +131,39 @@ export function EarningsTable() {
         <thead>
           <tr>
             {["Sl", "User Image", "Email", "Subscription Type", "Price", "Expire Date", "Action"].map(
-              (h) => <th key={h}>{h}</th>,
+              (h) => (
+                <th key={h}>{h}</th>
+              ),
             )}
           </tr>
         </thead>
         <tbody>
           {visibleUsers.map((user, i) => (
-            <tr key={user[0]}>
-              <td>{user[0]}</td>
+            <tr key={user.id + i}>
+              <td>{user.sl}</td>
               <td>
                 <div className="flex items-center gap-[7px]">
                   <img
-                    src={avatars[i % avatars.length]}
+                    src={user.avatar || avatars[i % avatars.length]}
                     alt=""
                     className="w-[22px] h-[22px] rounded-full object-cover"
                   />
-                  <strong className="font-medium">{user[1].split(" ")[0]}</strong>
+                  <strong className="font-medium">{user.userName}</strong>
                 </div>
               </td>
-              <td>{user[2]}</td>
-              <td>{getUserSubscription(user[0])}</td>
-              <td>{`$${[10.99, 29.99, 49.99][i % 3]}`}</td>
+              <td>{user.email}</td>
+              <td>{user.subscriptionType}</td>
+              <td>{user.price}</td>
               <td>
-                {user[5].split("\n")[0]}
+                {user.expireDate}
                 <br />
-                <small>02:20PM</small>
+                <small>{user.expireTime}</small>
               </td>
               <td>
                 <Link
-                  aria-label={`View ${user[1]}`}
+                  aria-label={`View ${user.userName}`}
                   className="grid place-items-center w-[22px] h-[22px] border border-[#d8dadd] rounded-full [&_svg]:w-[11px]"
-                  to={`/earnings/${user[0]}`}
+                  to={`/earnings/${user.rawId || user.id}`}
                 >
                   <Eye />
                 </Link>
@@ -129,7 +182,7 @@ export function EarningsTable() {
       <Pagination
         page={page}
         pageCount={pageCount}
-        totalItems={filteredUsers.length}
+        totalItems={displayList.length}
         pageSize={pageSize}
         onPageChange={setPage}
       />

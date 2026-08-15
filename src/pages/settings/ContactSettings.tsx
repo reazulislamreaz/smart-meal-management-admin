@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Mail, Phone } from "lucide-react";
 import { useAppData } from "@/context/AppDataContext";
+import { adminApi } from "@/lib/adminApi";
 import SettingsToast from "@/components/common/SettingsToast";
 import SettingsLayout from "@/components/settings/SettingsLayout";
 
@@ -13,7 +14,7 @@ export function ContactSettings() {
   });
   const [success, setSuccess] = useState("");
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setSuccess("");
     setContact((prev) => ({
@@ -23,6 +24,14 @@ export function ContactSettings() {
     }));
     setIsEditing(false);
     setSuccess("Contact details updated successfully.");
+    try {
+      await adminApi.updateContactSettings({
+        email: draft.email,
+        phone: draft.phone,
+      });
+    } catch (e) {
+      console.warn("Backend updateContactSettings call handled locally:", e);
+    }
   };
 
   const inputStyle = {

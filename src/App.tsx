@@ -18,8 +18,11 @@ import AppConfiguration from "@/pages/settings/AppConfiguration";
 import TextSettings from "@/pages/settings/TextSettings";
 import ContactSettings from "@/pages/settings/ContactSettings";
 
+import { clearStoredTokens, getStoredTokens } from "@/lib/auth";
+
 function isAuthenticated() {
-  return (
+  const { token } = getStoredTokens();
+  return !!token && (
     localStorage.getItem("sizzl-auth") === "1" ||
     sessionStorage.getItem("sizzl-auth") === "1"
   );
@@ -31,8 +34,7 @@ export default function App() {
   const handleLogin = () => setAuthed(true);
 
   const handleLogout = () => {
-    localStorage.removeItem("sizzl-auth");
-    sessionStorage.removeItem("sizzl-auth");
+    clearStoredTokens();
     setAuthed(false);
   };
 

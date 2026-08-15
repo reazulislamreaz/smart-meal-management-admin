@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Link, useSearchParams, useLocation } from "react-router-dom";
 import { useStoredState } from "@/hooks/useStoredState";
 import { initialPlans } from "@/data/adminData";
+import { adminApi } from "@/lib/adminApi";
+import type { SubscriptionPlan } from "@/types/admin";
 import PageHeading from "@/components/common/PageHeading";
 import EmptyState from "@/components/common/EmptyState";
 import PlanCard from "@/components/subscription/PlanCard";
@@ -11,8 +13,25 @@ export function SubscriptionPlans() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const query = (searchParams.get("q") ?? "").toLowerCase();
-  const [plans, setPlans] = useStoredState("sizzl-plans", initialPlans);
+  const [plans, setPlans] = useStoredState<SubscriptionPlan[]>("sizzl-plans", initialPlans);
   const [success, setSuccess] = useState("");
+
+  const fetchPlans = () => {
+    adminApi
+      .getSubscriptionPlans()
+      .then((res) => {
+        if (res && res.length > 0) {
+          setPlans(res);
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not load subscription plans from backend:", err.message);
+      });
+  };
+
+  useEffect(() => {
+    fetchPlans();
+  }, []);
 
   useEffect(() => {
     if (location.state?.message) {
@@ -21,6 +40,18 @@ export function SubscriptionPlans() {
       window.history.replaceState({}, document.title);
     }
   }, [location]);
+
+  const handleDeletePlan = async (id: string) => {
+    setPlans((current) => current.filter((item) => item.id !== id));
+    setSuccess("Subscription plan deleted successfully.");
+
+    try {
+      await adminApi.deleteSubscriptionPlan(id);
+      fetchPlans();
+    } catch (e) {
+      console.warn("Backend delete plan call handled locally:", e);
+    }
+  };
 
   const filteredPlans = plans.filter((plan) =>
     [plan.name, plan.description, ...plan.features]
@@ -54,12 +85,7 @@ export function SubscriptionPlans() {
           <PlanCard
             key={plan.id}
             plan={plan}
-            onDelete={() => {
-              setPlans((current) =>
-                current.filter((item) => item.id !== plan.id),
-              );
-              setSuccess("Subscription plan deleted successfully.");
-            }}
+            onDelete={() => handleDeletePlan(plan.id)}
           />
         ))}
         {!filteredPlans.length && (

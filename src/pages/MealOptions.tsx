@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { useStoredState } from "@/hooks/useStoredState";
+import { adminApi } from "@/lib/adminApi";
 
 export function MealOptions() {
   const [diet, setDiet] = useStoredState("sizzl-diets", [
@@ -29,22 +30,59 @@ export function MealOptions() {
   const [modalTarget, setModalTarget] = useState<"diet" | "cuisine" | null>(null);
   const [newValue, setNewValue] = useState("");
 
+  useEffect(() => {
+    let isMounted = true;
+    adminApi
+      .getMealOptions()
+      .then((res) => {
+        if (!isMounted || !res) return;
+        if (res.diets && res.diets.length > 0) setDiet(res.diets);
+        if (res.cuisines && res.cuisines.length > 0) setCuisine(res.cuisines);
+      })
+      .catch((err) => {
+        console.warn("Could not fetch remote meal options, using local defaults:", err.message);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const openModal = (target: "diet" | "cuisine") => {
     setModalTarget(target);
     setNewValue("");
     setModalOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const trimmed = newValue.trim();
-    if (!trimmed) return;
+    if (!trimmed || !modalTarget) return;
+
     const setter = modalTarget === "diet" ? setDiet : setCuisine;
     setter((current) =>
       current.some((item) => item.toLowerCase() === trimmed.toLowerCase())
         ? current
         : [...current, trimmed],
     );
+
+    try {
+      await adminApi.addMealOption(modalTarget, trimmed);
+    } catch (e) {
+      console.warn("Backend addMealOption call handled locally:", e);
+    }
+
     setModalOpen(false);
+  };
+
+  const handleRemove = async (target: "diet" | "cuisine", itemValue: string) => {
+    const setter = target === "diet" ? setDiet : setCuisine;
+    setter((current) => current.filter((item) => item !== itemValue));
+
+    try {
+      await adminApi.removeMealOption(target, itemValue);
+    } catch (e) {
+      console.warn("Backend removeMealOption call handled locally:", e);
+    }
   };
 
   const backdropStyle = {
@@ -96,9 +134,7 @@ export function MealOptions() {
                 type="button"
                 aria-label={`Remove ${x}`}
                 className="border-0 bg-transparent text-[#9a9da2] pl-[2px] text-[12px] leading-none transition-colors duration-150 hover:text-[#ff5361]"
-                onClick={() =>
-                  setDiet((current) => current.filter((item) => item !== x))
-                }
+                onClick={() => handleRemove("diet", x)}
               >
                 ×
               </button>
@@ -128,9 +164,7 @@ export function MealOptions() {
                 type="button"
                 aria-label={`Remove ${x}`}
                 className="border-0 bg-transparent text-[#9a9da2] pl-[2px] text-[12px] leading-none transition-colors duration-150 hover:text-[#ff5361]"
-                onClick={() =>
-                  setCuisine((current) => current.filter((item) => item !== x))
-                }
+                onClick={() => handleRemove("cuisine", x)}
               >
                 ×
               </button>

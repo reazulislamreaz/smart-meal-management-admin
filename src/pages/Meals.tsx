@@ -4,6 +4,7 @@ import { useSearchParams, Link } from "react-router-dom";
 import { useStoredState } from "@/hooks/useStoredState";
 import { meals as initialMealsData } from "@/data/adminData";
 import type { MealDraft } from "@/types/admin";
+import { adminApi, type AdminMealItem } from "@/lib/adminApi";
 import EmptyState from "@/components/common/EmptyState";
 import Pagination from "@/components/common/Pagination";
 import MealForm from "@/components/meals/MealForm";
@@ -18,6 +19,7 @@ export function Meals() {
   );
   const [category, setCategory] = useState("All");
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingMealId, setEditingMealId] = useState<string | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [draft, setDraft] = useState<MealDraft>({
     name: "",
@@ -30,13 +32,49 @@ export function Meals() {
   const [page, setPage] = useState(1);
   const pageSize = 6;
 
-  const filteredMeals = mealRows.filter((meal) => {
-    const matchesQuery = meal
-      .join(" ")
-      .toLowerCase()
-      .includes(query.toLowerCase());
-    return matchesQuery && (category === "All" || meal[1] === category);
-  });
+  const [apiMeals, setApiMeals] = useState<AdminMealItem[]>([]);
+  const [useApi, setUseApi] = useState(false);
+
+  const fetchMealsData = () => {
+    adminApi
+      .getMeals({
+        search: query,
+        category: category !== "All" ? category : undefined,
+      })
+      .then((res) => {
+        if (res?.data) {
+          setApiMeals(res.data);
+          setUseApi(true);
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not load meals from backend, using stored data:", err.message);
+        setUseApi(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchMealsData();
+  }, [query, category]);
+
+  const filteredMeals = (useApi && apiMeals.length > 0)
+    ? apiMeals.map((m) => [
+        m.name,
+        m.type,
+        m.cuisine,
+        m.duration,
+        m.price,
+        m.status,
+        m.uses,
+        m.id,
+      ])
+    : mealRows.filter((meal) => {
+        const matchesQuery = meal
+          .join(" ")
+          .toLowerCase()
+          .includes(query.toLowerCase());
+        return matchesQuery && (category === "All" || meal[1] === category);
+      });
 
   const pageCount = Math.max(1, Math.ceil(filteredMeals.length / pageSize));
   const visibleMeals = filteredMeals.slice(
@@ -49,10 +87,11 @@ export function Meals() {
   const resetDraft = () => {
     setDraft({ name: "", type: "Dinner", cuisine: "", duration: "", price: "" });
     setEditingIndex(null);
+    setEditingMealId(null);
     setError("");
   };
 
-  const saveMeal = (event: FormEvent) => {
+  const saveMeal = async (event: FormEvent) => {
     event.preventDefault();
     if (
       !draft.name.trim() ||
@@ -70,21 +109,36 @@ export function Meals() {
       draft.cuisine.trim(),
       draft.duration.trim(),
       price,
-      editingIndex !== null ? (mealRows[editingIndex][5] ?? "Active") : "Active",
-      editingIndex !== null ? (mealRows[editingIndex][6] ?? "0") : "0",
+      editingIndex !== null ? (mealRows[editingIndex]?.[5] ?? "Active") : "Active",
+      editingIndex !== null ? (mealRows[editingIndex]?.[6] ?? "0") : "0",
     ];
+
     setMealRows((current) =>
       editingIndex === null
         ? [row, ...current]
         : current.map((meal, index) => (index === editingIndex ? row : meal)),
     );
+
+    // Call backend API
+    try {
+      if (editingMealId) {
+        await adminApi.updateMeal(editingMealId, draft);
+      } else {
+        await adminApi.createMeal(draft);
+      }
+      fetchMealsData();
+    } catch (e) {
+      console.warn("Backend meal save call handled locally:", e);
+    }
+
     resetDraft();
     setIsFormOpen(false);
   };
 
   const editMeal = (meal: string[]) => {
     const index = mealRows.indexOf(meal);
-    setEditingIndex(index);
+    setEditingIndex(index !== -1 ? index : null);
+    setEditingMealId(meal[7] || null);
     setDraft({
       name: meal[0],
       type: meal[1],
@@ -97,6 +151,19 @@ export function Meals() {
     window.setTimeout(() => {
       document.querySelector<HTMLInputElement>("#meal-name")?.focus();
     }, 0);
+  };
+
+  const deleteMealItem = async (meal: string[]) => {
+    const mealId = meal[7];
+    setMealRows((current) => current.filter((m) => m !== meal && m[0] !== meal[0]));
+    if (mealId) {
+      try {
+        await adminApi.deleteMeal(mealId);
+        fetchMealsData();
+      } catch (e) {
+        console.warn("Backend meal delete call handled locally:", e);
+      }
+    }
   };
 
   const handleSearchChange = (val: string) => {
@@ -170,6 +237,7 @@ export function Meals() {
             className="dark-button"
             style={{ height: "34px", fontSize: "11px", padding: "0 16px", borderRadius: "6px" }}
             onClick={() => {
+              resetDraft();
               setIsFormOpen(true);
               window.setTimeout(() => {
                 document.querySelector<HTMLInputElement>("#meal-name")?.focus();
@@ -184,7 +252,7 @@ export function Meals() {
       {(isFormOpen || editingIndex !== null) && (
         <MealForm
           draft={draft}
-          editing={editingIndex !== null}
+          editing={editingIndex !== null || editingMealId !== null}
           error={error}
           onChange={(field, value) =>
             setDraft((current) => ({ ...current, [field]: value }))
@@ -217,8 +285,8 @@ export function Meals() {
           </thead>
           <tbody>
             {visibleMeals.map((m) => (
-              <tr key={m[0]}>
-                {m.map((v, i) => (
+              <tr key={m[0] + (m[7] || "")}>
+                {m.slice(0, 7).map((v, i) => (
                   <td key={i}>
                     {i === 5 ? (
                       <span className={`status ${v.toLowerCase()}`}>{v}</span>
@@ -242,11 +310,7 @@ export function Meals() {
                     type="button"
                     aria-label={`Delete ${m[0]}`}
                     className="w-[21px] h-[21px] border border-[#dfe1e4] bg-white rounded-[3px] text-[#ff4d5b] mr-1 [&_svg]:w-[9px]"
-                    onClick={() =>
-                      setMealRows((current) =>
-                        current.filter((meal) => meal !== m),
-                      )
-                    }
+                    onClick={() => deleteMealItem(m)}
                   >
                     <Trash2 />
                   </button>
