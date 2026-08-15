@@ -18,18 +18,35 @@ export function EarningsTable() {
   const [apiSubscribers, setApiSubscribers] = useState<EarningsSubscriberItem[]>([]);
   const [useApi, setUseApi] = useState(false);
 
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 180);
+    return () => clearTimeout(handler);
+  }, [query]);
+
   useEffect(() => {
     let isMounted = true;
     adminApi
       .getEarningsSubscribers({
-        search: query,
+        search: debouncedQuery,
         subscriptionType: subscription !== "All" ? subscription : undefined,
         sortOrder,
+        limit: 100,
       })
-      .then((res) => {
-        if (!isMounted || !res?.data) return;
-        setApiSubscribers(res.data);
-        setUseApi(true);
+      .then((res: any) => {
+        if (!isMounted) return;
+        const list: EarningsSubscriberItem[] = Array.isArray(res)
+          ? res
+          : Array.isArray(res?.data)
+            ? res.data
+            : [];
+
+        if (list.length > 0) {
+          setApiSubscribers(list);
+          setUseApi(true);
+        }
       })
       .catch((err) => {
         console.warn("Could not load earnings from backend, using fallback:", err.message);
@@ -39,7 +56,7 @@ export function EarningsTable() {
     return () => {
       isMounted = false;
     };
-  }, [query, subscription, sortOrder]);
+  }, [debouncedQuery, subscription, sortOrder]);
 
   const fallbackUsers = useMemo(
     () =>

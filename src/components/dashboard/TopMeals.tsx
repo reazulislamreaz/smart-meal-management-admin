@@ -19,7 +19,7 @@ export function TopMeals({ meals }: { meals?: TopMealItem[] }) {
     uses: m[6],
   }));
 
-  const sourceMeals = meals && meals.length > 0 ? meals : defaultTopMeals;
+  const sourceMeals = meals !== undefined && meals.length > 0 ? meals : defaultTopMeals;
 
   const filteredMeals = sourceMeals.filter((meal) =>
     `${meal.title} ${meal.price}`.toLowerCase().includes(query),

@@ -168,6 +168,18 @@ export const adminApi = {
     return api.get<AdminUserDetails>(`/admin/users/${id}`);
   },
 
+  getUserRatio: async (): Promise<{
+    chartData: { monthly: number[]; annually: number[]; monthlyCounts: number[]; annualCounts: number[] };
+    peak: { monthIndex: number; monthName: string; count: number };
+    stats: { totalUsers: number; activeUsers: number; blockedUsers: number; subscribedUsers: number; activeRatio: number; blockedRatio: number; subscribedRatio: number };
+  }> => {
+    return api.get("/admin/users/ratio");
+  },
+
+  getLatestTaskUser: async (): Promise<{ task: any; user: any }> => {
+    return api.get<{ task: any; user: any }>("/admin/tasks/latest-user");
+  },
+
   toggleUserBlock: async (id: string, isBlocked?: boolean): Promise<{ isBlocked: boolean; message: string }> => {
     return api.patch(`/admin/users/${id}/block`, { isBlocked });
   },

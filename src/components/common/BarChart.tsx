@@ -20,32 +20,53 @@ export function BarChart({
     annually: [46, 58, 86, 61, 45, 61, 34, 43, 55, 71, 36, 53],
     monthly: [40, 53, 72, 56, 63, 48, 67, 58, 45, 64, 51, 69],
   });
+  const [peak, setPeak] = useState<{
+    monthIndex: number;
+    count: number;
+  }>({
+    monthIndex: 2,
+    count: 220,
+  });
 
   useEffect(() => {
     let isMounted = true;
     if (annuallyBars && monthlyBars) {
       setChartData({ annually: annuallyBars, monthly: monthlyBars });
-    } else {
-      adminApi
-        .getEarningsOverview()
-        .then((res) => {
-          if (!isMounted || !res?.chartData) return;
-          if (res.chartData.annually && res.chartData.monthly) {
-            setChartData({
-              annually: res.chartData.annually,
-              monthly: res.chartData.monthly,
-            });
-          }
-        })
-        .catch((err) => {
-          console.warn("Could not load chart data from backend:", err.message);
-        });
+      return;
     }
+
+    const fetchAnalytics = title.toLowerCase().includes("user")
+      ? adminApi.getUserRatio()
+      : adminApi.getEarningsOverview();
+
+    fetchAnalytics
+      .then((res: any) => {
+        if (!isMounted || !res) return;
+        const chart = res.chartData || res.data?.chartData;
+        const peakData = res.peak || res.data?.peak;
+
+        if (chart && Array.isArray(chart.annually) && Array.isArray(chart.monthly)) {
+          setChartData({
+            annually: chart.annually,
+            monthly: chart.monthly,
+          });
+        }
+
+        if (peakData && typeof peakData.monthIndex === "number") {
+          setPeak({
+            monthIndex: peakData.monthIndex,
+            count: peakData.count || 220,
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not load real ratio data from backend:", err.message);
+      });
 
     return () => {
       isMounted = false;
     };
-  }, [annuallyBars, monthlyBars]);
+  }, [title, annuallyBars, monthlyBars]);
 
   const bars =
     period === "annually"
@@ -59,14 +80,14 @@ export function BarChart({
         <div>
           <button
             type="button"
-            className={`border px-[11px] py-1 text-[12px] rounded-[12px] ml-[5px] ${period === "monthly" ? "bg-[#191a1c] text-white border-[#191a1c]" : "border-[#bfc3c8] bg-white"}`}
+            className={`border px-[11px] py-1 text-[12px] rounded-[12px] ml-[5px] cursor-pointer transition-colors duration-150 ${period === "monthly" ? "bg-[#191a1c] text-white border-[#191a1c]" : "border-[#bfc3c8] bg-white text-[#34363a] hover:bg-[#f0f2f5]"}`}
             onClick={() => setPeriod("monthly")}
           >
             Monthly
           </button>
           <button
             type="button"
-            className={`border px-[11px] py-1 text-[12px] rounded-[12px] ml-[5px] ${period === "annually" ? "bg-[#191a1c] text-white border-[#191a1c]" : "border-[#bfc3c8] bg-white"}`}
+            className={`border px-[11px] py-1 text-[12px] rounded-[12px] ml-[5px] cursor-pointer transition-colors duration-150 ${period === "annually" ? "bg-[#191a1c] text-white border-[#191a1c]" : "border-[#bfc3c8] bg-white text-[#34363a] hover:bg-[#f0f2f5]"}`}
             onClick={() => setPeriod("annually")}
           >
             Annually
@@ -83,41 +104,44 @@ export function BarChart({
           <span>0</span>
         </div>
         <div className="flex-1 flex items-end justify-around px-1">
-          {bars.map((height, i) => (
-            <div
-              className="w-[5.5%] h-full flex flex-col justify-end items-center gap-[7px]"
-              key={i}
-            >
+          {bars.map((height, i) => {
+            const isPeak = period === "monthly" ? i === peak.monthIndex : i === 11;
+            return (
               <div
-                className={`relative w-[25px] min-h-[4px] rounded-t-[5px] ${i === 2 ? "bg-[repeating-linear-gradient(135deg,#111_0,#111_2px,#4a4a4a_2px,#4a4a4a_4px)]" : "bg-[repeating-linear-gradient(135deg,#c9ccd0_0,#c9ccd0_2px,#e4e6e8_2px,#e4e6e8_4px)]"}`}
-                style={{ height: `${height}%` }}
+                className="w-[5.5%] h-full flex flex-col justify-end items-center gap-[7px]"
+                key={i}
               >
-                {i === 2 && (
-                  <b className="absolute top-[-24px] left-1/2 -translate-x-1/2 bg-[#151618] text-white px-[7px] py-1 rounded-[4px] text-[12px]">
-                    220
-                  </b>
-                )}
+                <div
+                  className={`relative w-[25px] min-h-[4px] rounded-t-[5px] transition-all duration-300 ${isPeak ? "bg-[repeating-linear-gradient(135deg,#111_0,#111_2px,#4a4a4a_2px,#4a4a4a_4px)]" : "bg-[repeating-linear-gradient(135deg,#c9ccd0_0,#c9ccd0_2px,#e4e6e8_2px,#e4e6e8_4px)]"}`}
+                  style={{ height: `${height}%` }}
+                >
+                  {isPeak && (
+                    <b className="absolute top-[-24px] left-1/2 -translate-x-1/2 bg-[#151618] text-white px-[7px] py-1 rounded-[4px] text-[12px] whitespace-nowrap shadow-sm">
+                      {peak.count}
+                    </b>
+                  )}
+                </div>
+                <span className="text-[#777] text-[12px] h-[13px]">
+                  {
+                    [
+                      "Jan",
+                      "Feb",
+                      "Mar",
+                      "Apr",
+                      "May",
+                      "Jun",
+                      "Jul",
+                      "Aug",
+                      "Sep",
+                      "Oct",
+                      "Nov",
+                      "Dec",
+                    ][i]
+                  }
+                </span>
               </div>
-              <span className="text-[#777] text-[12px] h-[13px]">
-                {
-                  [
-                    "Jan",
-                    "Feb",
-                    "Mar",
-                    "Apr",
-                    "May",
-                    "Jun",
-                    "Jul",
-                    "Aug",
-                    "Sep",
-                    "Oct",
-                    "Nov",
-                    "Dec",
-                  ][i]
-                }
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

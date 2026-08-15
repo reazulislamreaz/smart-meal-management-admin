@@ -52,29 +52,45 @@ export function UserTable() {
   const [apiUsers, setApiUsers] = useState<AdminUserItem[]>([]);
   const [useApi, setUseApi] = useState(false);
 
+  // Debounced search query for fast UI response
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
   useEffect(() => {
-    let isMounted = true;
+    const handler = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 180);
+    return () => clearTimeout(handler);
+  }, [query]);
+
+  const fetchUsers = () => {
     adminApi
       .getUsers({
-        search: query,
+        search: debouncedQuery,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
         isBlocked: tab === "blocked" ? true : undefined,
+        limit: 100,
       })
-      .then((res) => {
-        if (!isMounted || !res?.data) return;
-        setApiUsers(res.data);
-        setUseApi(true);
+      .then((res: any) => {
+        const list: AdminUserItem[] = Array.isArray(res)
+          ? res
+          : Array.isArray(res?.data)
+            ? res.data
+            : [];
+
+        if (list.length > 0) {
+          setApiUsers(list);
+          setUseApi(true);
+        }
       })
       .catch((err) => {
         console.warn("Could not load users from backend, using fallback dataset:", err.message);
         setUseApi(false);
       });
+  };
 
-    return () => {
-      isMounted = false;
-    };
-  }, [query, tab, dateFrom, dateTo]);
+  useEffect(() => {
+    fetchUsers();
+  }, [debouncedQuery, tab, dateFrom, dateTo]);
 
   // Combined fallback list with block state
   const fallbackUsers = useMemo(
@@ -94,7 +110,7 @@ export function UserTable() {
           `${u.joiningDate}\n${u.joiningTime || ""}`,
         ],
         rawId: u.id,
-        blocked: u.isBlocked || blockedIds.includes(u.id) || blockedIds.includes(u.no),
+        blocked: !!u.isBlocked || blockedIds.includes(u.id) || blockedIds.includes(u.no),
       }));
     }
 
@@ -151,6 +167,7 @@ export function UserTable() {
     // Call backend API if possible
     try {
       await adminApi.toggleUserBlock(targetId, !isCurrentlyBlocked);
+      fetchUsers();
     } catch (e) {
       console.warn("Backend toggleUserBlock call handled locally:", e);
     }

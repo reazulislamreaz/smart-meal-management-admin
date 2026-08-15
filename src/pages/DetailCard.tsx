@@ -215,6 +215,45 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
               <strong className="text-[12px] wrap-anywhere approved">{displayPlan}</strong>
             </div>
           </div>
+
+          {/* Household Tasks Section */}
+          {apiUser?.tasks && apiUser.tasks.length > 0 && (
+            <div className="mt-5 pt-4 border-t border-[#edf0f2]">
+              <h4 className="m-0 mb-3 text-[14px] font-semibold text-[#17181a]">
+                Household Tasks & Chores ({apiUser.tasks.length})
+              </h4>
+              <div className="flex flex-col gap-2">
+                {apiUser.tasks.map((task: any, idx: number) => (
+                  <div
+                    key={task.id || idx}
+                    className="flex items-center justify-between gap-3 p-3 bg-[#f8f9fa] border border-[#e5e7ea] rounded-[6px]"
+                  >
+                    <div className="flex flex-col gap-1 min-w-0">
+                      <strong className="text-[13px] font-medium text-[#27292c]">
+                        {task.title}
+                      </strong>
+                      {task.description && (
+                        <p className="m-0 text-[11px] text-[#666a70]">
+                          {task.description}
+                        </p>
+                      )}
+                    </div>
+                    <span
+                      className={`text-[10px] font-semibold px-2 py-1 rounded-[10px] shrink-0 ${
+                        task.status === "COMPLETED"
+                          ? "bg-[#e6f7ef] text-[#059669]"
+                          : task.status === "IN_PROGRESS"
+                            ? "bg-[#eff6ff] text-[#2563eb]"
+                            : "bg-[#fff7ed] text-[#ea580c]"
+                      }`}
+                    >
+                      {task.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
       ) : (
         <section className="bg-white border border-[#e5e7ea] rounded-[7px] px-[18px] py-[15px]" style={{ marginTop: "14px" }}>

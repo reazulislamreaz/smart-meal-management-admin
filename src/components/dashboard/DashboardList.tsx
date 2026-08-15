@@ -21,7 +21,7 @@ export function DashboardList({ users }: { users?: DashboardUserItem[] }) {
     { name: "Marco Williams", plan: "Monthly", avatar: avatars[5] },
   ];
 
-  const sourceRows = users && users.length > 0 ? users : defaultRows;
+  const sourceRows = users !== undefined && users.length > 0 ? users : defaultRows;
 
   const rows = sourceRows.filter((row) =>
     `${row.name} ${row.plan}`.toLowerCase().includes(query),

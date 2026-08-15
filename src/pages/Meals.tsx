@@ -47,15 +47,29 @@ export function Meals() {
     isLoading: false,
   });
 
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 180);
+    return () => clearTimeout(handler);
+  }, [query]);
+
   const fetchMealsData = () => {
     adminApi
       .getMeals({
-        search: query,
+        search: debouncedQuery,
         category: category !== "All" ? category : undefined,
+        limit: 100,
       })
-      .then((res) => {
-        if (res?.data) {
-          setApiMeals(res.data);
+      .then((res: any) => {
+        const list = Array.isArray(res)
+          ? res
+          : Array.isArray(res?.data)
+            ? res.data
+            : [];
+        if (list.length > 0) {
+          setApiMeals(list);
           setUseApi(true);
         }
       })
@@ -67,7 +81,7 @@ export function Meals() {
 
   useEffect(() => {
     fetchMealsData();
-  }, [query, category]);
+  }, [debouncedQuery, category]);
 
   const filteredMeals = (useApi && apiMeals.length > 0)
     ? apiMeals.map((m) => [

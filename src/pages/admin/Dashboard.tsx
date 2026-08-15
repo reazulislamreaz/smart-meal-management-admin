@@ -32,10 +32,10 @@ export function Dashboard() {
     };
   }, []);
 
-  const totalUsers = stats?.miniStats?.totalUsers?.value || "2,543";
-  const activeTotal = stats?.miniStats?.activeTotal?.value || "1.3k";
-  const meed = stats?.miniStats?.meed?.value || "$10,500";
-  const mealPayment = stats?.miniStats?.mealPayment?.value || "32.8k";
+  const totalUsers = stats?.miniStats?.totalUsers?.value || (stats ? "0" : "42");
+  const activeTotal = stats?.miniStats?.activeTotal?.value || (stats ? "0" : "33");
+  const meed = stats?.miniStats?.meed?.value || (stats ? "$0" : "$990");
+  const mealPayment = stats?.miniStats?.mealPayment?.value || (stats ? "0" : "24");
 
   return (
     <>
