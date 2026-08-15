@@ -5,6 +5,7 @@ import { useStoredState } from "@/hooks/useStoredState";
 import { users, avatars } from "@/data/adminData";
 import { adminApi, type AdminUserDetails } from "@/lib/adminApi";
 import { ConfirmModal } from "@/components/common/ConfirmModal";
+import UserAvatar from "@/components/common/UserAvatar";
 
 export function DetailCard({ earnings = false }: { earnings?: boolean }) {
   const { id } = useParams();
@@ -105,9 +106,11 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
       >
         {/* Avatar */}
         <div style={{ position: "relative" }}>
-          <img
+          <UserAvatar
             src={displayAvatar}
-            alt={displayName}
+            name={displayName}
+            fallbackIndex={avatarIdx}
+            size={180}
             style={{
               width: "90px",
               height: "90px",

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Pencil } from "lucide-react";
 import { useAppData } from "@/context/AppDataContext";
 import SettingsLayout from "@/components/settings/SettingsLayout";
+import UserAvatar from "@/components/common/UserAvatar";
 
 export function GeneralSettings() {
   const { profile } = useAppData();
@@ -9,9 +10,10 @@ export function GeneralSettings() {
     <SettingsLayout>
       <section className="bg-white border border-[#e5e7ea] rounded-[7px] flex justify-between items-center px-[18px] py-[15px] mb-[14px] max-[420px]:items-start max-[420px]:gap-[10px]">
         <div className="flex items-center gap-3">
-          <img
+          <UserAvatar
             src={profile.avatar}
-            alt=""
+            name={profile.name}
+            size={90}
             className="w-[45px] h-[45px] rounded-full object-cover max-[420px]:w-[40px] max-[420px]:h-[40px]"
           />
           <div className="flex flex-col gap-1">

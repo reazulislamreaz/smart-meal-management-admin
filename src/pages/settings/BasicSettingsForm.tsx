@@ -14,6 +14,7 @@ import { useAppData } from "@/context/AppDataContext";
 import { adminApi } from "@/lib/adminApi";
 import SettingsToast from "@/components/common/SettingsToast";
 import SettingsLayout from "@/components/settings/SettingsLayout";
+import UserAvatar from "@/components/common/UserAvatar";
 
 export function BasicSettingsForm({
   type,
@@ -166,9 +167,10 @@ export function BasicSettingsForm({
               }}
             >
               <div style={{ position: "relative" }}>
-                <img
+                <UserAvatar
                   src={profileDraft.avatar}
-                  alt={profileDraft.name}
+                  name={profileDraft.name}
+                  size={160}
                   style={{
                     width: "80px",
                     height: "80px",

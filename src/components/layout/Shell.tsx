@@ -11,6 +11,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from "react-router-do
 import { useAppData } from "@/context/AppDataContext";
 import { nav } from "@/data/adminData";
 import notificationArt from "@/assets/hero.png";
+import UserAvatar from "@/components/common/UserAvatar";
 
 export function Shell({ children, onLogout }: { children: ReactNode; onLogout?: () => void }) {
   const { profile } = useAppData();
@@ -166,7 +167,11 @@ export function Shell({ children, onLogout }: { children: ReactNode; onLogout?: 
                 setNotificationsOpen(false);
               }}
             >
-              <img src={profile.avatar} alt="" />
+              <UserAvatar
+                src={profile.avatar}
+                name={profile.name}
+                className="w-[28px] h-[28px] rounded-full object-cover shrink-0"
+              />
               <strong>{profile.name}</strong>
               <ChevronDown />
             </button>

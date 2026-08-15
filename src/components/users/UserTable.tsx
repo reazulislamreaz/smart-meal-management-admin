@@ -7,6 +7,7 @@ import { adminApi, type AdminUserItem } from "@/lib/adminApi";
 import EmptyState from "@/components/common/EmptyState";
 import Pagination from "@/components/common/Pagination";
 import { ConfirmModal } from "@/components/common/ConfirmModal";
+import UserAvatar from "@/components/common/UserAvatar";
 
 // ─── Default blocked user IDs ──────────────────────────────────────────────
 const DEFAULT_BLOCKED: string[] = ["03", "05"];
@@ -94,7 +95,12 @@ export function UserTable() {
 
   // Combined fallback list with block state
   const fallbackUsers = useMemo(
-    () => defaultUsers.map((u) => ({ data: u, blocked: blockedIds.includes(u[0]) })),
+    () =>
+      defaultUsers.map((u, i) => ({
+        data: u,
+        blocked: blockedIds.includes(u[0]),
+        avatar: avatars[i % avatars.length],
+      })),
     [blockedIds],
   );
 
@@ -110,6 +116,7 @@ export function UserTable() {
           `${u.joiningDate}\n${u.joiningTime || ""}`,
         ],
         rawId: u.id,
+        avatar: u.avatar,
         blocked: !!u.isBlocked || blockedIds.includes(u.id) || blockedIds.includes(u.no),
       }));
     }
@@ -318,9 +325,10 @@ export function UserTable() {
                 <td style={{ color: "#777", fontSize: "10px" }}>{displayNo}</td>
                 <td>
                   <div className="flex items-center gap-[7px]">
-                    <img
-                      src={avatars[Math.abs(avatarIdx) % avatars.length]}
-                      alt=""
+                    <UserAvatar
+                      src={u.avatar || avatars[Math.abs(avatarIdx) % avatars.length]}
+                      name={user[1]}
+                      fallbackIndex={avatarIdx}
                       className="w-[22px] h-[22px] rounded-full object-cover"
                     />
                     <strong className="font-medium">{user[1]}</strong>

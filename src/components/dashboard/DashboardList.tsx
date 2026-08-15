@@ -1,6 +1,7 @@
 import { useSearchParams } from "react-router-dom";
 import { avatars } from "@/data/adminData";
 import EmptyState from "@/components/common/EmptyState";
+import UserAvatar from "@/components/common/UserAvatar";
 
 export interface DashboardUserItem {
   id?: string;
@@ -36,9 +37,10 @@ export function DashboardList({ users }: { users?: DashboardUserItem[] }) {
             className="min-h-[34px] border-t border-[#edf0f2] flex items-center gap-[9px] text-[12px]"
             key={row.name + i}
           >
-            <img
-              src={row.avatar || avatars[(i + 1) % avatars.length]}
-              alt=""
+            <UserAvatar
+              src={row.avatar}
+              name={row.name}
+              fallbackIndex={i + 1}
               className="w-[19px] h-[19px] rounded-full object-cover"
             />
             <span className="flex-1 font-medium flex flex-col gap-[2px]">

@@ -22,7 +22,7 @@ export const initialProfile: Profile = {
   address: "USA",
   role: "Admin",
   memberSince: "January",
-  avatar: "https://i.pravatar.cc/96?img=12",
+  avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
 };
 
 export const initialPreferences: Preferences = {
@@ -63,15 +63,10 @@ export const initialPageCopy = {
   },
 };
 
-export const avatars = [
-  "https://i.pravatar.cc/96?img=12",
-  "https://i.pravatar.cc/96?img=32",
-  "https://i.pravatar.cc/96?img=47",
-  "https://i.pravatar.cc/96?img=5",
-  "https://i.pravatar.cc/96?img=15",
-  "https://i.pravatar.cc/96?img=11",
-  "https://i.pravatar.cc/96?img=59",
-];
+export const DEFAULT_AVATAR =
+  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80";
+
+export const avatars = [DEFAULT_AVATAR];
 
 export const nav = [
   { label: "Dashboard", to: "/", icon: LayoutDashboard },

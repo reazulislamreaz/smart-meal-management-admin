@@ -6,6 +6,7 @@ import { users as defaultUsers, avatars } from "@/data/adminData";
 import { adminApi, type EarningsSubscriberItem } from "@/lib/adminApi";
 import EmptyState from "@/components/common/EmptyState";
 import Pagination from "@/components/common/Pagination";
+import UserAvatar from "@/components/common/UserAvatar";
 
 export function EarningsTable() {
   const [searchParams] = useSearchParams();
@@ -160,9 +161,10 @@ export function EarningsTable() {
               <td>{user.sl}</td>
               <td>
                 <div className="flex items-center gap-[7px]">
-                  <img
+                  <UserAvatar
                     src={user.avatar || avatars[i % avatars.length]}
-                    alt=""
+                    name={user.userName}
+                    fallbackIndex={i}
                     className="w-[22px] h-[22px] rounded-full object-cover"
                   />
                   <strong className="font-medium">{user.userName}</strong>
