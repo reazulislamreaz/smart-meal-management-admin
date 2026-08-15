@@ -53,12 +53,25 @@ export type AppData = {
   setBannersCopy: Dispatch<SetStateAction<BannersCopy>>;
 };
 
+export type MealIngredientDraft = {
+  name: string;
+  quantity: number;
+  unit: string;
+  category?: string;
+};
+
 export type MealDraft = {
   name: string;
   type: string;
   cuisine: string;
   duration: string;
   price: string;
+  servings?: number;
+  description?: string;
+  dietaryTags?: string[];
+  instructions?: string[];
+  ingredients?: MealIngredientDraft[];
+  imageUrl?: string;
 };
 
 export type SubscriptionPlan = {

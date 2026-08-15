@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Navigate, Route, Routes, BrowserRouter } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 import AppDataProvider from "@/context/AppDataContext";
 import Shell from "@/components/layout/Shell";
 import LoginPage from "@/pages/LoginPage";
@@ -8,6 +9,8 @@ import Users from "@/pages/Users";
 import DetailCard from "@/pages/DetailCard";
 import Meals from "@/pages/Meals";
 import MealOptions from "@/pages/MealOptions";
+import Coupons from "@/pages/Coupons";
+import Messages from "@/pages/Messages";
 import SubscriptionOverview from "@/pages/SubscriptionOverview";
 import SubscriptionPlans from "@/pages/SubscriptionPlans";
 import SubscriptionForm from "@/pages/SubscriptionForm";
@@ -17,6 +20,7 @@ import BasicSettingsForm from "@/pages/settings/BasicSettingsForm";
 import AppConfiguration from "@/pages/settings/AppConfiguration";
 import TextSettings from "@/pages/settings/TextSettings";
 import ContactSettings from "@/pages/settings/ContactSettings";
+import AuditLogs from "@/pages/settings/AuditLogs";
 import SessionExpiredModal from "@/components/common/SessionExpiredModal";
 
 import { clearStoredTokens, getStoredTokens, isJwtExpired } from "@/lib/auth";
@@ -99,6 +103,32 @@ export default function App() {
 
   return (
     <AppDataProvider>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3500,
+          style: {
+            background: "#17181a",
+            color: "#fff",
+            fontSize: "12px",
+            borderRadius: "6px",
+            border: "1px solid #2e3035",
+            padding: "10px 14px",
+          },
+          success: {
+            iconTheme: {
+              primary: "#10b981",
+              secondary: "#fff",
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: "#ef4444",
+              secondary: "#fff",
+            },
+          },
+        }}
+      />
       <BrowserRouter>
         <Shell onLogout={handleLogout}>
           <Routes>
@@ -107,6 +137,8 @@ export default function App() {
             <Route path="/users/:id" element={<DetailCard />} />
             <Route path="/meals" element={<Meals />} />
             <Route path="/meal-options" element={<MealOptions />} />
+            <Route path="/coupons" element={<Coupons />} />
+            <Route path="/messages" element={<Messages />} />
             <Route path="/subscription" element={<SubscriptionOverview />} />
             <Route path="/subscription/plans" element={<SubscriptionPlans />} />
             <Route path="/subscription/create" element={<SubscriptionForm />} />
@@ -135,6 +167,7 @@ export default function App() {
               element={<BasicSettingsForm type="password" />}
             />
             <Route path="/settings/contact" element={<ContactSettings />} />
+            <Route path="/settings/audit-logs" element={<AuditLogs />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Shell>

@@ -9,6 +9,7 @@ const settingsNav = [
   ["About us", "/settings/about"],
   ["Change Password", "/settings/password"],
   ["Contact us", "/settings/contact"],
+  ["Audit Logs", "/settings/audit-logs"],
 ];
 
 export function SettingsLayout({ children }: { children: ReactNode }) {

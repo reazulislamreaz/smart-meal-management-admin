@@ -36,6 +36,12 @@
   td small { color: #777; font-size: 12px; }
   tbody tr { transition: background .12s ease; }
   tbody tr:hover { background: #fafbfc; }
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
 }
 
 /* ── Shared atoms (highly reused; kept as @apply so the many call

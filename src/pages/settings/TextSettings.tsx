@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
+import toast from "react-hot-toast";
 import { useAppData } from "@/context/AppDataContext";
 import { adminApi } from "@/lib/adminApi";
-import SettingsToast from "@/components/common/SettingsToast";
 import SettingsLayout from "@/components/settings/SettingsLayout";
 
 // Escape all HTML, then re-enable only the b/i/u formatting tags. This keeps the
@@ -21,27 +21,25 @@ export function TextSettings({ type }: { type: "privacy" | "about" }) {
 
   const [text, setText] = useState(source);
   const [isEditing, setIsEditing] = useState(false);
-  const [success, setSuccess] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setText(source);
     setIsEditing(false);
-    setSuccess("");
   }, [type, source]);
 
   const handleUpdate = async () => {
     setter(text);
     setIsEditing(false);
-    setSuccess(`${rawTitle} updated successfully.`);
     try {
       await adminApi.updateContentPage(
         type === "privacy" ? "privacy-policy" : "about-us",
         rawTitle,
         text,
       );
-    } catch (e) {
-      console.warn("Backend updateContentPage call handled locally:", e);
+      toast.success(`${rawTitle} updated successfully.`);
+    } catch (e: any) {
+      toast.error(e.message || `Failed to update ${rawTitle}.`);
     }
   };
 
@@ -82,10 +80,6 @@ export function TextSettings({ type }: { type: "privacy" | "about" }) {
   return (
     <SettingsLayout>
       <section className="bg-white border border-[#e5e7ea] rounded-[7px] p-[18px] min-h-[230px] max-[420px]:p-[14px] [&_.dark-button]:float-right [&_.dark-button]:min-w-[80px]" style={{ padding: "20px", position: "relative" }}>
-        {success && (
-          <SettingsToast message={success} onDismiss={() => setSuccess("")} />
-        )}
-
         {isEditing ? (
           <>
             <h3 style={{ margin: "0 0 12px", fontSize: "14px", fontWeight: 600 }}>

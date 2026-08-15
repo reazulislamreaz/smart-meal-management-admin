@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { RefreshCw, Pencil, Check } from "lucide-react";
+import toast from "react-hot-toast";
 import { useAppData } from "@/context/AppDataContext";
 import { defaultAppConfig } from "@/data/adminData";
 import { adminApi } from "@/lib/adminApi";
-import SettingsToast from "@/components/common/SettingsToast";
 import SettingsLayout from "@/components/settings/SettingsLayout";
 
 export function AppConfiguration() {
@@ -11,7 +11,6 @@ export function AppConfiguration() {
   const [draftConfig, setDraftConfig] = useState(appConfig);
   const [editingBanner, setEditingBanner] = useState<string | null>(null);
   const [bannerValue, setBannerValue] = useState("");
-  const [success, setSuccess] = useState("");
   const [confirmReset, setConfirmReset] = useState(false);
 
   useEffect(() => {
@@ -19,7 +18,6 @@ export function AppConfiguration() {
   }, [appConfig]);
 
   const handleReset = () => {
-    setSuccess("");
     setConfirmReset(true);
   };
 
@@ -27,7 +25,6 @@ export function AppConfiguration() {
     setDraftConfig(defaultAppConfig);
     setAppConfig(defaultAppConfig);
     setConfirmReset(false);
-    setSuccess("Configurations reset to default values.");
     try {
       await adminApi.updateAppConfig({
         trialDays: defaultAppConfig.trialDays,
@@ -35,14 +32,14 @@ export function AppConfiguration() {
         aiModel: defaultAppConfig.aiModel,
         maxSuggestions: defaultAppConfig.maxSuggestions,
       });
-    } catch (e) {
-      console.warn("Backend reset config call handled locally:", e);
+      toast.success("Configurations reset to default values.");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to reset configuration.");
     }
   };
 
   const handleSave = async () => {
     setAppConfig(draftConfig);
-    setSuccess("App Configuration updated successfully.");
     try {
       await adminApi.updateAppConfig({
         trialDays: draftConfig.trialDays,
@@ -50,14 +47,15 @@ export function AppConfiguration() {
         aiModel: draftConfig.aiModel,
         maxSuggestions: draftConfig.maxSuggestions,
       });
-    } catch (e) {
-      console.warn("Backend updateAppConfig call handled locally:", e);
+      toast.success("App Configuration updated successfully.");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to update configuration.");
     }
   };
 
   const handleDiscard = () => {
     setDraftConfig(appConfig);
-    setSuccess("Changes discarded.");
+    toast.success("Changes discarded.");
   };
 
   const handleEditBanner = (key: string, currentValue: string) => {
@@ -72,13 +70,13 @@ export function AppConfiguration() {
     };
     setBannersCopy(nextBanners);
     setEditingBanner(null);
-    setSuccess("Banner text updated successfully.");
     try {
       await adminApi.updateAppConfig({
         bannersCopy: nextBanners,
       });
-    } catch (e) {
-      console.warn("Backend updateAppConfig banner call handled locally:", e);
+      toast.success("Banner text updated successfully.");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to update banner text.");
     }
   };
 
@@ -115,9 +113,6 @@ export function AppConfiguration() {
   return (
     <SettingsLayout>
       <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-        {success && (
-          <SettingsToast message={success} onDismiss={() => setSuccess("")} />
-        )}
 
         {confirmReset && (
           <div

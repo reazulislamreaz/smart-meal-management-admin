@@ -108,6 +108,7 @@ export interface AdminMealItem {
   cuisine: string;
   duration: string;
   price: string;
+  servings?: number;
   status: string;
   uses: string;
   description?: string;
@@ -115,6 +116,45 @@ export interface AdminMealItem {
   instructions?: string[];
   ingredients?: any[];
   imageUrl?: string;
+}
+
+export interface AdminCouponItem {
+  id: string;
+  code: string;
+  discountPercent: number;
+  validUntil: string | null;
+  maxRedemptions: number;
+  redemptionCount?: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  subject: string | null;
+  message: string;
+  status: "UNREAD" | "READ" | "RESOLVED";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminAuditLogItem {
+  id: string;
+  userId: string | null;
+  action: string;
+  entity: string;
+  entityId: string | null;
+  details: any;
+  ipAddress: string | null;
+  createdAt: string;
+  user?: {
+    id: string;
+    email: string;
+    name: string | null;
+  } | null;
 }
 
 export interface FullAdminSettings {
@@ -212,7 +252,13 @@ export const adminApi = {
       mealType: draft.type,
       cuisine: draft.cuisine,
       prepTimeMinutes: durationNum,
+      servings: draft.servings || 4,
       estimatedCost: priceNum,
+      description: draft.description || undefined,
+      dietaryTags: draft.dietaryTags || [],
+      instructions: draft.instructions || [],
+      ingredients: draft.ingredients || [],
+      imageUrl: draft.imageUrl || undefined,
       status: "Active",
     });
   },
@@ -226,12 +272,38 @@ export const adminApi = {
       mealType: draft.type,
       cuisine: draft.cuisine,
       prepTimeMinutes: durationNum,
+      servings: draft.servings || 4,
       estimatedCost: priceNum,
+      description: draft.description || undefined,
+      dietaryTags: draft.dietaryTags,
+      instructions: draft.instructions,
+      ingredients: draft.ingredients,
+      imageUrl: draft.imageUrl,
     });
   },
 
   deleteMeal: async (id: string): Promise<{ success: boolean; message: string }> => {
     return api.delete(`/admin/meals/${id}`);
+  },
+
+  uploadImage: async (file: File): Promise<{ url: string; key: string }> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+    const token = localStorage.getItem("sizzl-token") || sessionStorage.getItem("sizzl-token");
+    const response = await fetch(`${API_BASE_URL}/upload/image`, {
+      method: "POST",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
+    if (!response.ok) {
+      const errJson = await response.json().catch(() => ({}));
+      throw new Error(errJson.message || "Failed to upload image to S3");
+    }
+    const res = await response.json();
+    return res.data;
   },
 
   // 4. Meal Options (Taxonomy)
@@ -349,6 +421,114 @@ export const adminApi = {
   updateContentPage: async (slug: "privacy-policy" | "about-us", title: string, content: string) => {
     return api.put(`/admin/content/${slug}`, { title, content });
   },
+
+  // 8. Coupons Management
+  getCoupons: async (params?: { search?: string; isActive?: boolean }): Promise<AdminCouponItem[]> => {
+    const query = new URLSearchParams();
+    if (params?.search) query.set("search", params.search);
+    if (params?.isActive !== undefined) query.set("isActive", String(params.isActive));
+    const qs = query.toString();
+    return api.get(`/admin/coupons${qs ? `?${qs}` : ""}`);
+  },
+
+  getCoupon: async (id: string): Promise<AdminCouponItem> => {
+    return api.get(`/admin/coupons/${id}`);
+  },
+
+  createCoupon: async (dto: {
+    code: string;
+    discountPercent: number;
+    validUntil?: string | null;
+    maxRedemptions?: number;
+    isActive?: boolean;
+  }): Promise<AdminCouponItem> => {
+    return api.post("/admin/coupons", dto);
+  },
+
+  updateCoupon: async (
+    id: string,
+    dto: {
+      code?: string;
+      discountPercent?: number;
+      validUntil?: string | null;
+      maxRedemptions?: number;
+      isActive?: boolean;
+    },
+  ): Promise<AdminCouponItem> => {
+    return api.put(`/admin/coupons/${id}`, dto);
+  },
+
+  toggleCouponStatus: async (id: string): Promise<AdminCouponItem> => {
+    return api.patch(`/admin/coupons/${id}/status`);
+  },
+
+  deleteCoupon: async (id: string): Promise<{ success: boolean; message: string }> => {
+    return api.delete(`/admin/coupons/${id}`);
+  },
+
+  // 9. Contact / Support Inquiries
+  listContactMessages: async (params?: {
+    status?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: AdminContactMessage[]; meta: { total: number; page: number; limit: number; totalPages: number } }> => {
+    const query = new URLSearchParams();
+    if (params?.status) query.set("status", params.status);
+    if (params?.page) query.set("page", String(params.page));
+    if (params?.limit) query.set("limit", String(params.limit));
+    const qs = query.toString();
+    return api.get(`/admin/contacts${qs ? `?${qs}` : ""}`);
+  },
+
+  getContactMessage: async (id: string): Promise<AdminContactMessage> => {
+    return api.get(`/admin/contacts/${id}`);
+  },
+
+  updateContactStatus: async (id: string, status: "UNREAD" | "READ" | "RESOLVED"): Promise<AdminContactMessage> => {
+    return api.patch(`/admin/contacts/${id}/status`, { status });
+  },
+
+  deleteContactMessage: async (id: string): Promise<{ success: boolean; message: string }> => {
+    return api.delete(`/admin/contacts/${id}`);
+  },
+
+  // 10. Audit Logs
+  getAuditLogs: async (params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: AdminAuditLogItem[]; meta: { total: number; page: number; limit: number; totalPages: number } }> => {
+    const query = new URLSearchParams();
+    if (params?.page) query.set("page", String(params.page));
+    if (params?.limit) query.set("limit", String(params.limit));
+    const qs = query.toString();
+    return api.get(`/admin/audit-logs${qs ? `?${qs}` : ""}`);
+  },
+
+  // 11. Reports & Exports
+  exportUsersExcel: async (): Promise<Blob> => {
+    const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+    const token = localStorage.getItem("sizzl-token") || sessionStorage.getItem("sizzl-token");
+    const response = await fetch(`${API_BASE_URL}/exports/users/excel`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) throw new Error("Failed to export Excel report");
+    return response.blob();
+  },
+
+  exportUsersPdf: async (): Promise<Blob> => {
+    const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+    const token = localStorage.getItem("sizzl-token") || sessionStorage.getItem("sizzl-token");
+    const response = await fetch(`${API_BASE_URL}/exports/users/pdf`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) throw new Error("Failed to export PDF report");
+    return response.blob();
+  },
 };
 
 export default adminApi;
+

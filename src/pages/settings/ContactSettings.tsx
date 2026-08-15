@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { Mail, Phone } from "lucide-react";
+import toast from "react-hot-toast";
 import { useAppData } from "@/context/AppDataContext";
 import { adminApi } from "@/lib/adminApi";
-import SettingsToast from "@/components/common/SettingsToast";
 import SettingsLayout from "@/components/settings/SettingsLayout";
 
 export function ContactSettings() {
@@ -12,25 +12,23 @@ export function ContactSettings() {
     email: contact.email === "hello@sizzl.com" ? "Support@gmail.com" : contact.email,
     phone: contact.phone === "+1 123 456 789" ? "5454588" : contact.phone,
   });
-  const [success, setSuccess] = useState("");
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    setSuccess("");
     setContact((prev) => ({
       ...prev,
       email: draft.email,
       phone: draft.phone,
     }));
     setIsEditing(false);
-    setSuccess("Contact details updated successfully.");
     try {
       await adminApi.updateContactSettings({
         email: draft.email,
         phone: draft.phone,
       });
-    } catch (e) {
-      console.warn("Backend updateContactSettings call handled locally:", e);
+      toast.success("Contact details updated successfully.");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to update contact settings.");
     }
   };
 
@@ -60,9 +58,6 @@ export function ContactSettings() {
         className="bg-white border border-[#e5e7ea] rounded-[7px] max-w-[430px] p-[18px] max-[420px]:p-[14px]"
         style={{ padding: "20px", maxWidth: "430px" }}
       >
-        {success && (
-          <SettingsToast message={success} onDismiss={() => setSuccess("")} />
-        )}
         <h3 style={{ margin: "0 0 20px", fontSize: "14px", fontWeight: 600 }}>
           {isEditing ? "Edit Contact us" : "Contact us"}
         </h3>

@@ -10,9 +10,9 @@ import {
   EyeOff,
   Camera,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import { useAppData } from "@/context/AppDataContext";
 import { adminApi } from "@/lib/adminApi";
-import SettingsToast from "@/components/common/SettingsToast";
 import SettingsLayout from "@/components/settings/SettingsLayout";
 import UserAvatar from "@/components/common/UserAvatar";
 
@@ -37,21 +37,20 @@ export function BasicSettingsForm({
   const [showConfirm, setShowConfirm] = useState(false);
 
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const handleAvatarChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setError("Please choose an image file.");
+      toast.error("Please choose an image file.");
       return;
     }
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
-        setError("");
         setProfileDraft((current) => ({ ...current, avatar: reader.result as string }));
+        toast.success("Avatar preview loaded.");
       }
     };
     reader.readAsDataURL(file);
@@ -61,32 +60,31 @@ export function BasicSettingsForm({
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setError("");
-    setSuccess("");
 
     if (type === "profile") {
       setProfile(profileDraft);
-      setSuccess("Profile updated successfully.");
       try {
         await adminApi.updateProfile(profileDraft);
-      } catch (e) {
-        console.warn("Backend updateProfile call handled locally:", e);
+        toast.success("Profile updated successfully.");
+        navigate("/settings");
+      } catch (e: any) {
+        toast.error(e.message || "Failed to save profile.");
       }
-      window.setTimeout(() => navigate("/settings"), 1000);
     } else {
       if (passwords.next.length < 6) {
-        setError("Password must be at least 6 characters.");
+        toast.error("Password must be at least 6 characters.");
         return;
       }
       if (passwords.next !== passwords.confirm) {
-        setError("Passwords do not match.");
+        toast.error("Passwords do not match.");
         return;
       }
       try {
         await adminApi.changePassword(passwords.current || "AdminPassword123!", passwords.next);
-        setSuccess("Password updated successfully.");
-        window.setTimeout(() => navigate("/settings"), 1000);
+        toast.success("Password updated successfully.");
+        navigate("/settings");
       } catch (e: any) {
-        setError(e.message || "Failed to update password.");
+        toast.error(e.message || "Failed to update password.");
       }
     }
   };
@@ -130,9 +128,6 @@ export function BasicSettingsForm({
         onSubmit={handleSubmit}
         style={{ maxWidth: "430px", padding: "20px" }}
       >
-        {success && (
-          <SettingsToast message={success} onDismiss={() => setSuccess("")} />
-        )}
         {error && (
           <div
             role="alert"

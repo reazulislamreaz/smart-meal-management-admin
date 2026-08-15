@@ -5,6 +5,8 @@ import {
   CreditCard,
   CircleDollarSign,
   Settings,
+  TicketPercent,
+  Mail,
 } from "lucide-react";
 import type {
   Profile,
@@ -72,6 +74,8 @@ export const nav = [
   { label: "Dashboard", to: "/", icon: LayoutDashboard },
   { label: "User list", to: "/users", icon: UsersRound },
   { label: "Meals", to: "/meals", icon: Utensils },
+  { label: "Coupons", to: "/coupons", icon: TicketPercent },
+  { label: "Messages", to: "/messages", icon: Mail },
   { label: "Subscription", to: "/subscription", icon: CreditCard },
   { label: "Earnings", to: "/earnings", icon: CircleDollarSign },
   { label: "Setting", to: "/settings", icon: Settings },

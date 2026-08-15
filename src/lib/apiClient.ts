@@ -66,7 +66,11 @@ async function request<T = any>(
       throw new ApiError(errorMsg, response.status, jsonResult);
     }
 
-    return jsonResult?.data !== undefined ? jsonResult.data : jsonResult;
+    if (jsonResult && jsonResult.data !== undefined && jsonResult.meta !== undefined) {
+      return { data: jsonResult.data, meta: jsonResult.meta } as unknown as T;
+    }
+
+    return (jsonResult?.data !== undefined ? jsonResult.data : jsonResult) as T;
   } catch (error: any) {
     if (error instanceof ApiError) {
       throw error;

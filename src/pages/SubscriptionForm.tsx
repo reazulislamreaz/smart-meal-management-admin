@@ -1,6 +1,7 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import { useStoredState } from "@/hooks/useStoredState";
 import { initialPlans } from "@/data/adminData";
 import { adminApi } from "@/lib/adminApi";
@@ -55,10 +56,9 @@ export function SubscriptionForm({ edit = false }: { edit?: boolean }) {
         (feature) => feature.toLowerCase() === trimmed.toLowerCase(),
       )
     ) {
-      setError("Feature already exists in list.");
+      toast.error("Feature already exists in list.");
       return;
     }
-    setError("");
     setPlanFeatures((current) => [...current, trimmed]);
     setFeatureDraft("");
   };
@@ -69,13 +69,13 @@ export function SubscriptionForm({ edit = false }: { edit?: boolean }) {
 
     const normalizedPrice = price.replace(/^\$/, "").trim();
     if (!/^\d+(\.\d{1,2})?$/.test(normalizedPrice)) {
-      setError("Please enter a valid price format (e.g. 19.99)");
+      toast.error("Please enter a valid price format (e.g. 19.99)");
       return;
     }
 
     const cleanedFeatures = planFeatures.map((f) => f.trim()).filter(Boolean);
     if (cleanedFeatures.length === 0) {
-      setError("Please add at least one feature.");
+      toast.error("Please add at least one feature.");
       return;
     }
 
@@ -97,20 +97,15 @@ export function SubscriptionForm({ edit = false }: { edit?: boolean }) {
     try {
       if (edit && id) {
         await adminApi.updateSubscriptionPlan(id, plan);
+        toast.success("Subscription plan updated successfully.");
       } else {
         await adminApi.createSubscriptionPlan(plan);
+        toast.success("Subscription plan created successfully.");
       }
-    } catch (e) {
-      console.warn("Backend subscription plan save call handled locally:", e);
+      navigate("/subscription/plans");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save subscription plan.");
     }
-
-    navigate("/subscription/plans", {
-      state: {
-        message: edit
-          ? "Subscription updated successfully."
-          : "Subscription created successfully.",
-      },
-    });
   };
 
   return (

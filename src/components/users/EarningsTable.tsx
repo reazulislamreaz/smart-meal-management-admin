@@ -1,12 +1,12 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown, Eye } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
-import { getUserSubscription } from "@/utils/helpers";
-import { users as defaultUsers, avatars } from "@/data/adminData";
+import toast from "react-hot-toast";
 import { adminApi, type EarningsSubscriberItem } from "@/lib/adminApi";
 import EmptyState from "@/components/common/EmptyState";
 import Pagination from "@/components/common/Pagination";
 import UserAvatar from "@/components/common/UserAvatar";
+import { TableSkeletonRows } from "@/components/common/Skeleton";
 
 export function EarningsTable() {
   const [searchParams] = useSearchParams();
@@ -14,198 +14,189 @@ export function EarningsTable() {
   const [page, setPage] = useState(1);
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [subscription, setSubscription] = useState<"All" | "Annual" | "Monthly">("All");
-  const pageSize = 4;
+  const pageSize = 5;
 
-  const [apiSubscribers, setApiSubscribers] = useState<EarningsSubscriberItem[]>([]);
-  const [useApi, setUseApi] = useState(false);
+  const [subscribers, setSubscribers] = useState<EarningsSubscriberItem[]>([]);
+  const [totalSubscribers, setTotalSubscribers] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   const [debouncedQuery, setDebouncedQuery] = useState(query);
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(query);
-    }, 180);
+    }, 250);
     return () => clearTimeout(handler);
   }, [query]);
 
-  useEffect(() => {
-    let isMounted = true;
-    adminApi
-      .getEarningsSubscribers({
-        search: debouncedQuery,
+  const fetchEarnings = async () => {
+    try {
+      setLoading(true);
+      const res = await adminApi.getEarningsSubscribers({
+        page,
+        limit: pageSize,
+        search: debouncedQuery || undefined,
         subscriptionType: subscription !== "All" ? subscription : undefined,
         sortOrder,
-        limit: 100,
-      })
-      .then((res: any) => {
-        if (!isMounted) return;
-        const list: EarningsSubscriberItem[] = Array.isArray(res)
-          ? res
-          : Array.isArray(res?.data)
-            ? res.data
-            : [];
-
-        if (list.length > 0) {
-          setApiSubscribers(list);
-          setUseApi(true);
-        }
-      })
-      .catch((err) => {
-        console.warn("Could not load earnings from backend, using fallback:", err.message);
-        setUseApi(false);
       });
 
-    return () => {
-      isMounted = false;
-    };
+      const list = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+      const total = res?.meta?.total ?? list.length;
+      setSubscribers(list);
+      setTotalSubscribers(total);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to load subscriber transactions.");
+      setSubscribers([]);
+      setTotalSubscribers(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEarnings();
+  }, [page, debouncedQuery, subscription, sortOrder]);
+
+  useEffect(() => {
+    setPage(1);
   }, [debouncedQuery, subscription, sortOrder]);
 
-  const fallbackUsers = useMemo(
-    () =>
-      defaultUsers
-        .filter((user) => {
-          if (!query) return true;
-          return user.join(" ").toLowerCase().includes(query);
-        })
-        .filter((user) => {
-          if (subscription === "All") return true;
-          return getUserSubscription(user[0]) === subscription;
-        })
-        .sort((a, b) =>
-          sortOrder === "asc"
-            ? a[5].localeCompare(b[5])
-            : b[5].localeCompare(a[5]),
-        )
-        .map((user, i) => ({
-          id: user[0],
-          rawId: user[0],
-          sl: user[0],
-          userName: user[1].split(" ")[0],
-          email: user[2],
-          avatar: avatars[i % avatars.length],
-          subscriptionType: getUserSubscription(user[0]),
-          price: `$${[10.99, 29.99, 49.99][i % 3]}`,
-          expireDate: user[5].split("\n")[0],
-          expireTime: "02:20PM",
-        })),
-    [query, sortOrder, subscription],
-  );
-
-  const displayList = (useApi && apiSubscribers.length > 0) ? apiSubscribers.map((item) => ({
-    id: item.id,
-    rawId: item.userId || item.id,
-    sl: item.sl,
-    userName: item.userName.split(" ")[0],
-    email: item.email,
-    avatar: item.avatar,
-    subscriptionType: item.subscriptionType,
-    price: item.price,
-    expireDate: item.expireDate,
-    expireTime: item.expireTime || "02:20PM",
-  })) : fallbackUsers;
-
-  const pageCount = Math.max(1, Math.ceil(displayList.length / pageSize));
-  const visibleUsers = displayList.slice((page - 1) * pageSize, page * pageSize);
-
-  useEffect(() => setPage(1), [query, subscription, sortOrder]);
+  const pageCount = Math.max(1, Math.ceil(totalSubscribers / pageSize));
 
   const cycleSubscription = () => {
-    setSubscription((v) => (v === "All" ? "Annual" : v === "Annual" ? "Monthly" : "All"));
+    setSubscription((v) =>
+      v === "All" ? "Annual" : v === "Annual" ? "Monthly" : "All",
+    );
   };
 
   const pillBase =
-    "flex items-center gap-[7px] border-0 rounded-[14px] px-[10px] py-[6px] text-[12px] transition-[background,box-shadow,color] duration-150 [&_svg]:w-[10px] [&_svg]:h-[10px]";
-  const pillIdle = "bg-white hover:bg-[#f7f8fa]";
+    "flex items-center gap-[7px] border-0 rounded-[14px] px-[10px] py-[6px] text-[12px] cursor-pointer transition-[background,box-shadow,color] duration-150 [&_svg]:w-[10px] [&_svg]:h-[10px]";
+  const pillIdle = "bg-white hover:bg-[#f7f8fa] text-[#27292c]";
   const pillActive = "bg-[#17181a] text-white shadow-[0_1px_4px_rgba(23,24,26,.18)]";
 
   return (
-    <section className="bg-white border border-[#e5e7ea] rounded-[7px] max-w-full mt-[15px] overflow-x-auto overflow-y-hidden">
-      <div className="min-h-[45px] px-[13px] flex items-center justify-between bg-[#f0f1f3] max-[900px]:min-w-[760px]">
-        <h3 className="m-0 text-[16px]">All Earning list</h3>
+    <section className="bg-white border border-[#e5e7ea] rounded-[7px] max-w-full mt-[15px] overflow-x-auto overflow-y-hidden shadow-xs">
+      <div className="min-h-[45px] px-[13px] flex items-center justify-between bg-[#f0f1f3] max-[900px]:min-w-[760px] border-b border-[#dfe1e5]">
+        <div className="flex items-center gap-2">
+          <h3 className="m-0 text-[13px] font-bold text-[#17181a]">
+            All Subscriber Transactions
+          </h3>
+          <span className="rounded-full bg-[#e2e4e8] text-[#555] text-[10px] font-bold px-2 py-[2px]">
+            {totalSubscribers}
+          </span>
+        </div>
+
         <div className="flex gap-[7px] max-[620px]:flex-nowrap">
           <button
             type="button"
             className={`${pillBase} ${sortOrder === "asc" ? pillActive : pillIdle}`}
             onClick={() => setSortOrder((v) => (v === "desc" ? "asc" : "desc"))}
           >
-            Joining Date <ChevronDown />
+            Sort: {sortOrder === "desc" ? "Newest" : "Oldest"} <ChevronDown />
           </button>
           <button
             type="button"
             className={`${pillBase} ${subscription !== "All" ? pillActive : pillIdle}`}
             onClick={cycleSubscription}
           >
-            {subscription === "All" ? "Subscription" : subscription} <ChevronDown />
+            Tier: {subscription === "All" ? "All Plans" : subscription} <ChevronDown />
           </button>
           <button
             type="button"
-            className={`${pillBase} ${sortOrder === "desc" ? pillActive : pillIdle}`}
-            onClick={() => setSortOrder("desc")}
+            className={`${pillBase} ${pillIdle}`}
+            onClick={() => {
+              setSortOrder("desc");
+              setSubscription("All");
+            }}
           >
-            Recent Created <ChevronDown />
+            Reset Filters
           </button>
         </div>
       </div>
+
       <table>
         <thead>
           <tr>
-            {["Sl", "User Image", "Email", "Subscription Type", "Price", "Expire Date", "Action"].map(
-              (h) => (
-                <th key={h}>{h}</th>
-              ),
-            )}
+            {[
+              "S/L",
+              "User Name",
+              "Email",
+              "Subscription",
+              "Price",
+              "Expire Date",
+              "Action",
+            ].map((h) => (
+              <th key={h}>{h}</th>
+            ))}
           </tr>
         </thead>
         <tbody>
-          {visibleUsers.map((user, i) => (
-            <tr key={user.id + i}>
-              <td>{user.sl}</td>
-              <td>
-                <div className="flex items-center gap-[7px]">
-                  <UserAvatar
-                    src={user.avatar || avatars[i % avatars.length]}
-                    name={user.userName}
-                    fallbackIndex={i}
-                    className="w-[22px] h-[22px] rounded-full object-cover"
-                  />
-                  <strong className="font-medium">{user.userName}</strong>
-                </div>
-              </td>
-              <td>{user.email}</td>
-              <td>{user.subscriptionType}</td>
-              <td>{user.price}</td>
-              <td>
-                {user.expireDate}
-                <br />
-                <small>{user.expireTime}</small>
-              </td>
-              <td>
-                <Link
-                  aria-label={`View ${user.userName}`}
-                  className="grid place-items-center w-[22px] h-[22px] border border-[#d8dadd] rounded-full [&_svg]:w-[11px]"
-                  to={`/earnings/${user.rawId || user.id}`}
-                >
-                  <Eye />
-                </Link>
-              </td>
-            </tr>
-          ))}
-          {!visibleUsers.length && (
+          {loading ? (
+            <TableSkeletonRows cols={7} rows={pageSize} />
+          ) : subscribers.length > 0 ? (
+            subscribers.map((item, i) => (
+              <tr key={item.id}>
+                <td style={{ color: "#777", fontSize: "10px" }}>{item.sl}</td>
+                <td>
+                  <div className="flex items-center gap-[7px]">
+                    <UserAvatar
+                      src={item.avatar}
+                      name={item.userName}
+                      fallbackIndex={i}
+                      className="w-[22px] h-[22px] rounded-full object-cover"
+                    />
+                    <strong className="font-medium">{item.userName}</strong>
+                  </div>
+                </td>
+                <td>{item.email}</td>
+                <td>
+                  <span className="font-medium text-[#111827]">
+                    {item.subscriptionType}
+                  </span>
+                </td>
+                <td>
+                  <strong className="text-[#059669]">{item.price}</strong>
+                </td>
+                <td>
+                  {item.expireDate}
+                  {item.expireTime && (
+                    <>
+                      <br />
+                      <small>{item.expireTime}</small>
+                    </>
+                  )}
+                </td>
+                <td>
+                  <Link
+                    to={`/earnings/${item.userId || item.id}`}
+                    className="inline-flex items-center gap-1 h-[27px] px-[10px] rounded-[13px] border border-[#d0d3d8] bg-white text-[#34363a] text-[10px] font-semibold no-underline whitespace-nowrap cursor-pointer transition-[background,border-color,color,box-shadow] duration-140 hover:bg-[#17181a] hover:border-[#17181a] hover:text-white [&_svg]:w-[11px] [&_svg]:h-[11px]"
+                  >
+                    <Eye />
+                    <span>View</span>
+                  </Link>
+                </td>
+              </tr>
+            ))
+          ) : (
             <tr>
               <td colSpan={7}>
-                <EmptyState />
+                <EmptyState label="No transactions found" />
               </td>
             </tr>
           )}
         </tbody>
       </table>
-      <Pagination
-        page={page}
-        pageCount={pageCount}
-        totalItems={displayList.length}
-        pageSize={pageSize}
-        onPageChange={setPage}
-      />
+
+      {totalSubscribers > pageSize && (
+        <Pagination
+          page={page}
+          pageCount={pageCount}
+          totalItems={totalSubscribers}
+          pageSize={pageSize}
+          onPageChange={setPage}
+        />
+      )}
     </section>
   );
 }
+
 export default EarningsTable;
