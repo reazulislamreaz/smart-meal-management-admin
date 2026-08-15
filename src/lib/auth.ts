@@ -26,6 +26,33 @@ const TOKEN_KEY = "sizzl_access_token";
 const REFRESH_KEY = "sizzl_refresh_token";
 const USER_KEY = "sizzl_user_profile";
 
+export function isJwtExpired(token?: string | null): boolean {
+  if (!token) return true;
+  if (token.startsWith("demo_")) return false;
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return false;
+    const payload = JSON.parse(atob(parts[1]));
+    if (!payload.exp) return false;
+    const nowInSeconds = Math.floor(Date.now() / 1000);
+    return payload.exp <= nowInSeconds;
+  } catch {
+    return false;
+  }
+}
+
+export function dispatchSessionExpired(reason?: string) {
+  window.dispatchEvent(
+    new CustomEvent("sizzl:session-expired", {
+      detail: {
+        message:
+          reason ||
+          "Your login session has expired. Please enter your credentials again to continue.",
+      },
+    }),
+  );
+}
+
 export function getStoredTokens() {
   const token = localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
   const refreshToken = localStorage.getItem(REFRESH_KEY) || sessionStorage.getItem(REFRESH_KEY);

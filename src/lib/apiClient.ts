@@ -1,4 +1,4 @@
-import { getStoredTokens } from "./auth";
+import { getStoredTokens, isJwtExpired, dispatchSessionExpired } from "./auth";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
@@ -30,6 +30,13 @@ async function request<T = any>(
     headers.set("Content-Type", "application/json");
   }
 
+  // If token is present and expired on an authenticated call, dispatch session expired popup
+  if (token && !url.includes("/auth/login") && isJwtExpired(token)) {
+    console.warn("JWT is expired. Enforcing Super Admin logout with popup:", url);
+    dispatchSessionExpired("Your authentication token has expired. Please log in again to continue.");
+    throw new ApiError("Session expired. Please log in again.", 401, null);
+  }
+
   if (token && !token.startsWith("demo_")) {
     headers.set("Authorization", `Bearer ${token}`);
   }
@@ -40,9 +47,9 @@ async function request<T = any>(
       headers,
     });
 
-    if (response.status === 401) {
-      // If unauthorized and not on login page, session may have expired
+    if (response.status === 401 && !url.includes("/auth/login")) {
       console.warn("API request returned 401 Unauthorized:", url);
+      dispatchSessionExpired("Your session has expired. Please log in again.");
     }
 
     const contentType = response.headers.get("content-type");

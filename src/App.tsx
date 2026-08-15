@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigate, Route, Routes, BrowserRouter } from "react-router-dom";
 import AppDataProvider from "@/context/AppDataContext";
 import Shell from "@/components/layout/Shell";
@@ -17,12 +17,13 @@ import BasicSettingsForm from "@/pages/settings/BasicSettingsForm";
 import AppConfiguration from "@/pages/settings/AppConfiguration";
 import TextSettings from "@/pages/settings/TextSettings";
 import ContactSettings from "@/pages/settings/ContactSettings";
+import SessionExpiredModal from "@/components/common/SessionExpiredModal";
 
-import { clearStoredTokens, getStoredTokens } from "@/lib/auth";
+import { clearStoredTokens, getStoredTokens, isJwtExpired } from "@/lib/auth";
 
 function isAuthenticated() {
   const { token } = getStoredTokens();
-  return !!token && (
+  return !!token && !isJwtExpired(token) && (
     localStorage.getItem("sizzl-auth") === "1" ||
     sessionStorage.getItem("sizzl-auth") === "1"
   );
@@ -30,6 +31,13 @@ function isAuthenticated() {
 
 export default function App() {
   const [authed, setAuthed] = useState(isAuthenticated);
+  const [sessionExpiredModal, setSessionExpiredModal] = useState<{
+    isOpen: boolean;
+    message?: string;
+  }>({
+    isOpen: false,
+    message: "",
+  });
 
   const handleLogin = () => setAuthed(true);
 
@@ -38,8 +46,55 @@ export default function App() {
     setAuthed(false);
   };
 
+  const handleSessionExpiredLogin = () => {
+    clearStoredTokens();
+    setSessionExpiredModal({ isOpen: false, message: "" });
+    setAuthed(false);
+  };
+
+  useEffect(() => {
+    // 1. Listen for custom session-expired event dispatched by API calls
+    const handleExpiredEvent = (e: any) => {
+      if (authed) {
+        setSessionExpiredModal({
+          isOpen: true,
+          message:
+            e.detail?.message ||
+            "Your login session has expired for security reasons. Please log in again to continue.",
+        });
+      }
+    };
+    window.addEventListener("sizzl:session-expired", handleExpiredEvent);
+
+    // 2. Periodic background verification every 10 seconds
+    const interval = setInterval(() => {
+      const { token } = getStoredTokens();
+      if (token && authed && isJwtExpired(token)) {
+        setSessionExpiredModal({
+          isOpen: true,
+          message:
+            "Your authentication token has expired. Please log in again to resume your administrative session.",
+        });
+      }
+    }, 10000);
+
+    return () => {
+      window.removeEventListener("sizzl:session-expired", handleExpiredEvent);
+      clearInterval(interval);
+    };
+  }, [authed]);
+
   if (!authed) {
-    return <LoginPage onLogin={handleLogin} />;
+    return (
+      <>
+        <LoginPage onLogin={handleLogin} />
+        <SessionExpiredModal
+          isOpen={sessionExpiredModal.isOpen}
+          message={sessionExpiredModal.message}
+          onLoginAgain={handleSessionExpiredLogin}
+        />
+      </>
+    );
   }
 
   return (
@@ -84,6 +139,11 @@ export default function App() {
           </Routes>
         </Shell>
       </BrowserRouter>
+      <SessionExpiredModal
+        isOpen={sessionExpiredModal.isOpen}
+        message={sessionExpiredModal.message}
+        onLoginAgain={handleSessionExpiredLogin}
+      />
     </AppDataProvider>
   );
 }
