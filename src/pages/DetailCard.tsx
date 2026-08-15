@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { useStoredState } from "@/hooks/useStoredState";
 import { users, avatars } from "@/data/adminData";
 import { adminApi, type AdminUserDetails } from "@/lib/adminApi";
+import { ConfirmModal } from "@/components/common/ConfirmModal";
 
 export function DetailCard({ earnings = false }: { earnings?: boolean }) {
   const { id } = useParams();
@@ -16,6 +17,10 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
     "sizzl-blocked-users",
     ["03", "05"],
   );
+
+  // Confirm action modal state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -42,8 +47,18 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
       ? apiUser.isBlocked
       : blockedIds.includes(targetId) || blockedIds.includes(fallbackUser[0]);
 
-  const toggleBlock = async () => {
+  const requestToggleBlock = () => {
+    if (!isBlocked) {
+      setConfirmOpen(true);
+    } else {
+      executeToggleBlock();
+    }
+  };
+
+  const executeToggleBlock = async () => {
     const nextBlocked = !isBlocked;
+    setConfirmLoading(true);
+
     setBlockedIds((prev) =>
       prev.includes(targetId)
         ? prev.filter((x) => x !== targetId)
@@ -59,6 +74,9 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
     } catch (e) {
       console.warn("Backend toggleUserBlock call handled locally:", e);
     }
+
+    setConfirmLoading(false);
+    setConfirmOpen(false);
   };
 
   const displayName = apiUser?.name || fallbackUser[1];
@@ -108,7 +126,7 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
               width: "14px",
               height: "14px",
               borderRadius: "50%",
-              background: "#22c55e",
+              background: isBlocked ? "#ef4444" : "#22c55e",
               border: "2px solid #fff",
             }}
           />
@@ -122,8 +140,8 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
           <span
             style={{
               display: "inline-block",
-              background: isBlocked ? "#ffe5e8" : "#ffe5e8",
-              color: isBlocked ? "#e5484d" : "#e5484d",
+              background: isBlocked ? "#ffe5e8" : "#e3f9eb",
+              color: isBlocked ? "#e5484d" : "#22a65b",
               borderRadius: "12px",
               padding: "3px 14px",
               fontSize: "9px",
@@ -138,7 +156,7 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
         {!earnings && (
           <button
             type="button"
-            onClick={toggleBlock}
+            onClick={requestToggleBlock}
             style={{
               border: 0,
               borderRadius: "16px",
@@ -170,7 +188,7 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
       {/* ── User Information ────────────────────────────────────────── */}
       {!earnings ? (
         <section className="bg-white border border-[#e5e7ea] rounded-[7px] px-[18px] py-[15px]" style={{ marginTop: "14px" }}>
-          <h3 className="m-0 mb-4 text-[16px]">User Information</h3>
+          <h3 className="m-0 mb-4 text-[16px] font-bold">User Information</h3>
           <div className="grid grid-cols-4 gap-5 max-[1100px]:grid-cols-2 max-[420px]:grid-cols-1">
             <div className="flex flex-col gap-[5px] min-w-0">
               <span className="text-[#666a70] text-[12px]">Name</span>
@@ -200,7 +218,7 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
         </section>
       ) : (
         <section className="bg-white border border-[#e5e7ea] rounded-[7px] px-[18px] py-[15px]" style={{ marginTop: "14px" }}>
-          <h3 className="m-0 mb-4 text-[16px]">Subscription Buying Information</h3>
+          <h3 className="m-0 mb-4 text-[16px] font-bold">Subscription Buying Information</h3>
           <div className="grid grid-cols-3 gap-x-5 gap-y-6 max-[620px]:grid-cols-2 max-[420px]:grid-cols-1">
             {[
               ["Subscription Type", displayPlan],
@@ -221,6 +239,20 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
           </div>
         </section>
       )}
+
+      {/* Confirmation Modal for blocking user */}
+      <ConfirmModal
+        isOpen={confirmOpen}
+        title="Block User Account"
+        message={`Are you sure you want to block ${displayName}? Their platform access will be suspended and active meal planning subscriptions will be paused.`}
+        itemName={displayName}
+        confirmText="Yes, Block User"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={confirmLoading}
+        onConfirm={executeToggleBlock}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }

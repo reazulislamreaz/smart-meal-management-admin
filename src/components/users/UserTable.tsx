@@ -6,6 +6,7 @@ import { users as defaultUsers, avatars } from "@/data/adminData";
 import { adminApi, type AdminUserItem } from "@/lib/adminApi";
 import EmptyState from "@/components/common/EmptyState";
 import Pagination from "@/components/common/Pagination";
+import { ConfirmModal } from "@/components/common/ConfirmModal";
 
 // ─── Default blocked user IDs ──────────────────────────────────────────────
 const DEFAULT_BLOCKED: string[] = ["03", "05"];
@@ -27,6 +28,22 @@ export function UserTable() {
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 7;
+
+  // Confirm block modal state
+  const [blockConfirm, setBlockConfirm] = useState<{
+    isOpen: boolean;
+    id: string;
+    rawId?: string;
+    userName: string;
+    isBlocked: boolean;
+    isLoading: boolean;
+  }>({
+    isOpen: false,
+    id: "",
+    userName: "",
+    isBlocked: false,
+    isLoading: false,
+  });
 
   // navbar search takes priority over local search
   const query = topQuery || localSearch.toLowerCase();
@@ -89,9 +106,10 @@ export function UserTable() {
       })
       .filter((u) => {
         if (!dateFrom && !dateTo) return true;
-        const joining = (u.data[5] ?? "").split("\n")[0];
-        if (dateFrom && joining < dateFrom) return false;
-        if (dateTo && joining > dateTo) return false;
+        const raw = u.data[5]?.split("\n")[0];
+        if (!raw) return true;
+        if (dateFrom && raw < dateFrom) return false;
+        if (dateTo && raw > dateTo) return false;
         return true;
       })
       .map((u) => ({ ...u, rawId: u.data[0] }));
@@ -105,9 +123,24 @@ export function UserTable() {
   const blockedCount = displayList.filter((u) => u.blocked).length || blockedIds.length;
   const hasDateFilter = !!(dateFrom || dateTo);
 
-  const toggleBlock = async (id: string, rawId?: string) => {
+  const handleToggleBlockClick = (id: string, rawId?: string, userName = "User", isCurrentlyBlocked = false) => {
+    if (!isCurrentlyBlocked) {
+      setBlockConfirm({
+        isOpen: true,
+        id,
+        rawId,
+        userName,
+        isBlocked: false,
+        isLoading: false,
+      });
+    } else {
+      executeToggleBlock(id, rawId, true);
+    }
+  };
+
+  const executeToggleBlock = async (id: string, rawId?: string, isCurrentlyBlocked = false) => {
     const targetId = rawId || id;
-    const isCurrentlyBlocked = blockedIds.includes(id) || blockedIds.includes(targetId);
+    setBlockConfirm((prev) => ({ ...prev, isLoading: true }));
 
     setBlockedIds((prev) =>
       prev.includes(id) || prev.includes(targetId)
@@ -121,6 +154,14 @@ export function UserTable() {
     } catch (e) {
       console.warn("Backend toggleUserBlock call handled locally:", e);
     }
+
+    setBlockConfirm({
+      isOpen: false,
+      id: "",
+      userName: "",
+      isBlocked: false,
+      isLoading: false,
+    });
   };
 
   // ─── Shared class strings ────────────────────────────────────────────────
@@ -295,7 +336,7 @@ export function UserTable() {
                     {/* Block / Unblock */}
                     <button
                       type="button"
-                      onClick={() => toggleBlock(user[0], u.rawId)}
+                      onClick={() => handleToggleBlockClick(user[0], u.rawId, user[1], u.blocked)}
                       className={`inline-flex items-center gap-1 h-[27px] px-[10px] rounded-[13px] border text-[10px] font-semibold cursor-pointer whitespace-nowrap transition-[background,border-color,color] duration-140 [&_svg]:w-[11px] [&_svg]:h-[11px] ${u.blocked ? "bg-[#1a1c1f] border-[#1a1c1f] text-white hover:bg-[#ff5361] hover:border-[#ff5361] hover:text-white" : "border-[#e5e7ea] bg-[#f5f6f8] text-[#52565b] hover:bg-[#ffe5e8] hover:border-[#ffb3b8] hover:text-[#e5484d]"}`}
                       title={u.blocked ? "Unblock user" : "Block user"}
                     >
@@ -324,6 +365,28 @@ export function UserTable() {
         totalItems={displayList.length}
         pageSize={pageSize}
         onPageChange={setPage}
+      />
+
+      {/* Confirmation Modal for blocking user */}
+      <ConfirmModal
+        isOpen={blockConfirm.isOpen}
+        title="Block User Account"
+        message={`Are you sure you want to block ${blockConfirm.userName}? Their account access will be suspended and they will not be able to log in or generate meal plans.`}
+        itemName={blockConfirm.userName}
+        confirmText="Yes, Block User"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={blockConfirm.isLoading}
+        onConfirm={() => executeToggleBlock(blockConfirm.id, blockConfirm.rawId, false)}
+        onCancel={() =>
+          setBlockConfirm({
+            isOpen: false,
+            id: "",
+            userName: "",
+            isBlocked: false,
+            isLoading: false,
+          })
+        }
       />
     </section>
   );

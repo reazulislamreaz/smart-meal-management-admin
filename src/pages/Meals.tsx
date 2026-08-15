@@ -8,6 +8,7 @@ import { adminApi, type AdminMealItem } from "@/lib/adminApi";
 import EmptyState from "@/components/common/EmptyState";
 import Pagination from "@/components/common/Pagination";
 import MealForm from "@/components/meals/MealForm";
+import { ConfirmModal } from "@/components/common/ConfirmModal";
 
 export function Meals() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -35,6 +36,17 @@ export function Meals() {
   const [apiMeals, setApiMeals] = useState<AdminMealItem[]>([]);
   const [useApi, setUseApi] = useState(false);
 
+  // Confirm delete meal state
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    meal: string[] | null;
+    isLoading: boolean;
+  }>({
+    isOpen: false,
+    meal: null,
+    isLoading: false,
+  });
+
   const fetchMealsData = () => {
     adminApi
       .getMeals({
@@ -48,7 +60,7 @@ export function Meals() {
         }
       })
       .catch((err) => {
-        console.warn("Could not load meals from backend, using stored data:", err.message);
+        console.warn("Could not fetch remote meals, using local state:", err.message);
         setUseApi(false);
       });
   };
@@ -91,6 +103,14 @@ export function Meals() {
     setError("");
   };
 
+  const handleCreateNew = () => {
+    resetDraft();
+    setIsFormOpen(true);
+    window.setTimeout(() => {
+      document.querySelector<HTMLInputElement>("#meal-name")?.focus();
+    }, 0);
+  };
+
   const saveMeal = async (event: FormEvent) => {
     event.preventDefault();
     if (
@@ -111,6 +131,7 @@ export function Meals() {
       price,
       editingIndex !== null ? (mealRows[editingIndex]?.[5] ?? "Active") : "Active",
       editingIndex !== null ? (mealRows[editingIndex]?.[6] ?? "0") : "0",
+      editingMealId || "",
     ];
 
     setMealRows((current) =>
@@ -119,7 +140,6 @@ export function Meals() {
         : current.map((meal, index) => (index === editingIndex ? row : meal)),
     );
 
-    // Call backend API
     try {
       if (editingMealId) {
         await adminApi.updateMeal(editingMealId, draft);
@@ -153,8 +173,21 @@ export function Meals() {
     }, 0);
   };
 
-  const deleteMealItem = async (meal: string[]) => {
+  const requestDeleteMeal = (meal: string[]) => {
+    setDeleteConfirm({
+      isOpen: true,
+      meal,
+      isLoading: false,
+    });
+  };
+
+  const confirmDeleteMeal = async () => {
+    if (!deleteConfirm.meal) return;
+    const meal = deleteConfirm.meal;
     const mealId = meal[7];
+
+    setDeleteConfirm((prev) => ({ ...prev, isLoading: true }));
+
     setMealRows((current) => current.filter((m) => m !== meal && m[0] !== meal[0]));
     if (mealId) {
       try {
@@ -164,6 +197,12 @@ export function Meals() {
         console.warn("Backend meal delete call handled locally:", e);
       }
     }
+
+    setDeleteConfirm({
+      isOpen: false,
+      meal: null,
+      isLoading: false,
+    });
   };
 
   const handleSearchChange = (val: string) => {
@@ -236,13 +275,7 @@ export function Meals() {
             type="button"
             className="dark-button"
             style={{ height: "34px", fontSize: "11px", padding: "0 16px", borderRadius: "6px" }}
-            onClick={() => {
-              resetDraft();
-              setIsFormOpen(true);
-              window.setTimeout(() => {
-                document.querySelector<HTMLInputElement>("#meal-name")?.focus();
-              }, 0);
-            }}
+            onClick={handleCreateNew}
           >
             + Add Meal
           </button>
@@ -309,8 +342,8 @@ export function Meals() {
                   <button
                     type="button"
                     aria-label={`Delete ${m[0]}`}
-                    className="w-[21px] h-[21px] border border-[#dfe1e4] bg-white rounded-[3px] text-[#ff4d5b] mr-1 [&_svg]:w-[9px]"
-                    onClick={() => deleteMealItem(m)}
+                    className="w-[21px] h-[21px] border border-[#dfe1e4] bg-white rounded-[3px] text-[#ff4d5b] mr-1 [&_svg]:w-[9px] cursor-pointer"
+                    onClick={() => requestDeleteMeal(m)}
                   >
                     <Trash2 />
                   </button>
@@ -334,6 +367,26 @@ export function Meals() {
           onPageChange={setPage}
         />
       </section>
+
+      {/* Confirmation Modal for deleting meal / recipe */}
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        title="Delete Recipe"
+        message={`Are you sure you want to delete "${deleteConfirm.meal?.[0]}"? This recipe will be removed permanently from the master catalog.`}
+        itemName={deleteConfirm.meal?.[0]}
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={deleteConfirm.isLoading}
+        onConfirm={confirmDeleteMeal}
+        onCancel={() =>
+          setDeleteConfirm({
+            isOpen: false,
+            meal: null,
+            isLoading: false,
+          })
+        }
+      />
     </>
   );
 }

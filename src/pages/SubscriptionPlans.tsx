@@ -1,31 +1,54 @@
 import { useState, useEffect } from "react";
-import { Link, useSearchParams, useLocation } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { useStoredState } from "@/hooks/useStoredState";
 import { initialPlans } from "@/data/adminData";
 import { adminApi } from "@/lib/adminApi";
 import type { SubscriptionPlan } from "@/types/admin";
 import PageHeading from "@/components/common/PageHeading";
-import EmptyState from "@/components/common/EmptyState";
 import PlanCard from "@/components/subscription/PlanCard";
+import EmptyState from "@/components/common/EmptyState";
 import SettingsToast from "@/components/common/SettingsToast";
+import { ConfirmModal } from "@/components/common/ConfirmModal";
 
 export function SubscriptionPlans() {
-  const [searchParams] = useSearchParams();
+  const [plans, setPlans] = useStoredState<SubscriptionPlan[]>(
+    "sizzl-subscription-plans",
+    initialPlans,
+  );
   const location = useLocation();
-  const query = (searchParams.get("q") ?? "").toLowerCase();
-  const [plans, setPlans] = useStoredState<SubscriptionPlan[]>("sizzl-plans", initialPlans);
   const [success, setSuccess] = useState("");
+  const [searchParams] = useSearchParams();
+  const query = (searchParams.get("q") ?? "").toLowerCase();
+
+  // Confirm delete modal state
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    plan: SubscriptionPlan | null;
+    isLoading: boolean;
+  }>({
+    isOpen: false,
+    plan: null,
+    isLoading: false,
+  });
 
   const fetchPlans = () => {
     adminApi
       .getSubscriptionPlans()
       .then((res) => {
-        if (res && res.length > 0) {
-          setPlans(res);
+        if (res && Array.isArray(res) && res.length > 0) {
+          const mapped: SubscriptionPlan[] = res.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            description: p.description || "",
+            price: String(p.price),
+            duration: (p.interval === "yearly" || p.duration === "annual") ? "annual" : "monthly",
+            features: p.features || [],
+          }));
+          setPlans(mapped);
         }
       })
       .catch((err) => {
-        console.warn("Could not load subscription plans from backend:", err.message);
+        console.warn("Could not fetch remote plans, using local cache:", err.message);
       });
   };
 
@@ -36,14 +59,26 @@ export function SubscriptionPlans() {
   useEffect(() => {
     if (location.state?.message) {
       setSuccess(location.state.message);
-      // Clean up navigation state so it doesn't show toast on refresh
       window.history.replaceState({}, document.title);
     }
   }, [location]);
 
-  const handleDeletePlan = async (id: string) => {
+  const requestDeletePlan = (plan: SubscriptionPlan) => {
+    setDeleteConfirm({
+      isOpen: true,
+      plan,
+      isLoading: false,
+    });
+  };
+
+  const confirmDeletePlan = async () => {
+    if (!deleteConfirm.plan) return;
+    const { id, name } = deleteConfirm.plan;
+
+    setDeleteConfirm((prev) => ({ ...prev, isLoading: true }));
+
     setPlans((current) => current.filter((item) => item.id !== id));
-    setSuccess("Subscription plan deleted successfully.");
+    setSuccess(`Subscription plan "${name}" deleted successfully.`);
 
     try {
       await adminApi.deleteSubscriptionPlan(id);
@@ -51,6 +86,12 @@ export function SubscriptionPlans() {
     } catch (e) {
       console.warn("Backend delete plan call handled locally:", e);
     }
+
+    setDeleteConfirm({
+      isOpen: false,
+      plan: null,
+      isLoading: false,
+    });
   };
 
   const filteredPlans = plans.filter((plan) =>
@@ -85,7 +126,7 @@ export function SubscriptionPlans() {
           <PlanCard
             key={plan.id}
             plan={plan}
-            onDelete={() => handleDeletePlan(plan.id)}
+            onDelete={() => requestDeletePlan(plan)}
           />
         ))}
         {!filteredPlans.length && (
@@ -94,6 +135,26 @@ export function SubscriptionPlans() {
           />
         )}
       </div>
+
+      {/* Confirmation Modal for deleting subscription plan */}
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        title="Delete Subscription Plan"
+        message={`Are you sure you want to delete the "${deleteConfirm.plan?.name}" plan? Users currently subscribed will retain access until their period ends.`}
+        itemName={deleteConfirm.plan?.name}
+        confirmText="Yes, Delete Plan"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={deleteConfirm.isLoading}
+        onConfirm={confirmDeletePlan}
+        onCancel={() =>
+          setDeleteConfirm({
+            isOpen: false,
+            plan: null,
+            isLoading: false,
+          })
+        }
+      />
     </>
   );
 }

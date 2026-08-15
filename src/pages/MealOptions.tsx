@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { useStoredState } from "@/hooks/useStoredState";
 import { adminApi } from "@/lib/adminApi";
+import { ConfirmModal } from "@/components/common/ConfirmModal";
 
 export function MealOptions() {
   const [diet, setDiet] = useStoredState("sizzl-diets", [
@@ -29,6 +30,19 @@ export function MealOptions() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTarget, setModalTarget] = useState<"diet" | "cuisine" | null>(null);
   const [newValue, setNewValue] = useState("");
+
+  // Confirm delete modal state
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    target: "diet" | "cuisine" | null;
+    value: string;
+    isLoading: boolean;
+  }>({
+    isOpen: false,
+    target: null,
+    value: "",
+    isLoading: false,
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -74,15 +88,36 @@ export function MealOptions() {
     setModalOpen(false);
   };
 
-  const handleRemove = async (target: "diet" | "cuisine", itemValue: string) => {
+  const requestRemove = (target: "diet" | "cuisine", itemValue: string) => {
+    setDeleteConfirm({
+      isOpen: true,
+      target,
+      value: itemValue,
+      isLoading: false,
+    });
+  };
+
+  const confirmRemove = async () => {
+    if (!deleteConfirm.target || !deleteConfirm.value) return;
+    const { target, value } = deleteConfirm;
+
+    setDeleteConfirm((prev) => ({ ...prev, isLoading: true }));
+
     const setter = target === "diet" ? setDiet : setCuisine;
-    setter((current) => current.filter((item) => item !== itemValue));
+    setter((current) => current.filter((item) => item !== value));
 
     try {
-      await adminApi.removeMealOption(target, itemValue);
+      await adminApi.removeMealOption(target, value);
     } catch (e) {
       console.warn("Backend removeMealOption call handled locally:", e);
     }
+
+    setDeleteConfirm({
+      isOpen: false,
+      target: null,
+      value: "",
+      isLoading: false,
+    });
   };
 
   const backdropStyle = {
@@ -114,10 +149,10 @@ export function MealOptions() {
     <div className="px-1">
       <section className="bg-white border border-[#e5e7ea] rounded-[7px] px-[18px] py-[15px] mb-4">
         <div className="flex justify-between items-center">
-          <h3 className="text-[16px] m-0">Dietary options</h3>
+          <h3 className="text-[16px] m-0 font-bold">Dietary options</h3>
           <button
             type="button"
-            className="border-0 rounded-[3px] px-[9px] py-[5px] flex gap-1 items-center text-[12px] [&_svg]:w-[9px] text-[#22a65b] bg-[#e3f9eb]"
+            className="border-0 rounded-[3px] px-[9px] py-[5px] flex gap-1 items-center text-[12px] [&_svg]:w-[9px] text-[#22a65b] bg-[#e3f9eb] cursor-pointer"
             onClick={() => openModal("diet")}
           >
             <Plus /> Add
@@ -133,8 +168,8 @@ export function MealOptions() {
               <button
                 type="button"
                 aria-label={`Remove ${x}`}
-                className="border-0 bg-transparent text-[#9a9da2] pl-[2px] text-[12px] leading-none transition-colors duration-150 hover:text-[#ff5361]"
-                onClick={() => handleRemove("diet", x)}
+                className="border-0 bg-transparent text-[#9a9da2] pl-[2px] text-[12px] leading-none transition-colors duration-150 hover:text-[#ff5361] cursor-pointer"
+                onClick={() => requestRemove("diet", x)}
               >
                 ×
               </button>
@@ -144,10 +179,10 @@ export function MealOptions() {
       </section>
       <section className="bg-white border border-[#e5e7ea] rounded-[7px] px-[18px] py-[15px] mb-4">
         <div className="flex justify-between items-center">
-          <h3 className="text-[16px] m-0">Cuisine types</h3>
+          <h3 className="text-[16px] m-0 font-bold">Cuisine types</h3>
           <button
             type="button"
-            className="border-0 rounded-[3px] px-[9px] py-[5px] flex gap-1 items-center text-[12px] [&_svg]:w-[9px] text-[#3480dc] bg-[#e9f3ff]"
+            className="border-0 rounded-[3px] px-[9px] py-[5px] flex gap-1 items-center text-[12px] [&_svg]:w-[9px] text-[#3480dc] bg-[#e9f3ff] cursor-pointer"
             onClick={() => openModal("cuisine")}
           >
             <Plus /> Add
@@ -163,8 +198,8 @@ export function MealOptions() {
               <button
                 type="button"
                 aria-label={`Remove ${x}`}
-                className="border-0 bg-transparent text-[#9a9da2] pl-[2px] text-[12px] leading-none transition-colors duration-150 hover:text-[#ff5361]"
-                onClick={() => handleRemove("cuisine", x)}
+                className="border-0 bg-transparent text-[#9a9da2] pl-[2px] text-[12px] leading-none transition-colors duration-150 hover:text-[#ff5361] cursor-pointer"
+                onClick={() => requestRemove("cuisine", x)}
               >
                 ×
               </button>
@@ -173,7 +208,28 @@ export function MealOptions() {
         </div>
       </section>
 
-      {/* Custom React Modal */}
+      {/* Confirmation Modal for removing dietary options / cuisine ingredients */}
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        title={`Remove ${deleteConfirm.target === "diet" ? "Dietary Option" : "Cuisine Type"}`}
+        message={`Are you sure you want to remove "${deleteConfirm.value}"? Meal plans and recipe filtering using this option will be affected.`}
+        itemName={deleteConfirm.value}
+        confirmText="Yes, Remove"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={deleteConfirm.isLoading}
+        onConfirm={confirmRemove}
+        onCancel={() =>
+          setDeleteConfirm({
+            isOpen: false,
+            target: null,
+            value: "",
+            isLoading: false,
+          })
+        }
+      />
+
+      {/* Custom React Modal for adding */}
       {modalOpen && (
         <div style={backdropStyle} onClick={() => setModalOpen(false)}>
           <div style={modalCardStyle} onClick={(e) => e.stopPropagation()}>
