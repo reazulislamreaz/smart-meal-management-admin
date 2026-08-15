@@ -1,4 +1,9 @@
-import { getStoredTokens, isJwtExpired, dispatchSessionExpired } from "./auth";
+import {
+  getStoredTokens,
+  isJwtExpired,
+  refreshTokenApi,
+  dispatchSessionExpired,
+} from "./auth";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
@@ -18,26 +23,33 @@ export class ApiError extends Error {
 async function request<T = any>(
   endpoint: string,
   options: RequestInit = {},
+  isRetry = false,
 ): Promise<T> {
   const url = endpoint.startsWith("http")
     ? endpoint
     : `${API_BASE_URL}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
 
-  const { token } = getStoredTokens();
+  let { token } = getStoredTokens();
+  const isAuthEndpoint = url.includes("/auth/login") || url.includes("/auth/refresh");
+
+  // If accessToken is close to expiry and this is an authenticated call, perform silent refresh
+  if (token && !isAuthEndpoint && isJwtExpired(token)) {
+    const refreshedToken = await refreshTokenApi();
+    if (refreshedToken) {
+      token = refreshedToken;
+    } else if (!isRetry) {
+      dispatchSessionExpired("Your login session has expired. Please log in again to continue.");
+      throw new ApiError("Session expired. Please log in again.", 401, null);
+    }
+  }
+
   const headers = new Headers(options.headers || {});
 
   if (!headers.has("Content-Type") && !(options.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
 
-  // If token is present and expired on an authenticated call, dispatch session expired popup
-  if (token && !url.includes("/auth/login") && isJwtExpired(token)) {
-    console.warn("JWT is expired. Enforcing Super Admin logout with popup:", url);
-    dispatchSessionExpired("Your authentication token has expired. Please log in again to continue.");
-    throw new ApiError("Session expired. Please log in again.", 401, null);
-  }
-
-  if (token && !token.startsWith("demo_")) {
+  if (token && !isAuthEndpoint) {
     headers.set("Authorization", `Bearer ${token}`);
   }
 
@@ -47,9 +59,15 @@ async function request<T = any>(
       headers,
     });
 
-    if (response.status === 401 && !url.includes("/auth/login")) {
-      console.warn("API request returned 401 Unauthorized:", url);
-      dispatchSessionExpired("Your session has expired. Please log in again.");
+    // Handle 401 with automatic refresh token rotation & single retry
+    if (response.status === 401 && !isAuthEndpoint && !isRetry) {
+      const refreshedToken = await refreshTokenApi();
+      if (refreshedToken) {
+        return request<T>(endpoint, options, true);
+      } else {
+        dispatchSessionExpired("Your session has expired. Please log in again.");
+        throw new ApiError("Session expired. Please log in again.", 401, null);
+      }
     }
 
     const contentType = response.headers.get("content-type");

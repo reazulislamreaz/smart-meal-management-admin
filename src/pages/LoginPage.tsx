@@ -154,15 +154,22 @@ export function LoginPage({ onLogin }: Props) {
           </button>
         </form>
 
-        {/* Demo hint */}
-        <p className="mt-4 mb-0 text-[10px] text-[#a0a3a8] text-center leading-[1.6]">
-          Demo — email:{" "}
-          <strong className="text-[#52565b] font-semibold">{DEMO_EMAIL}</strong>{" "}
-          &nbsp;|&nbsp; password:{" "}
-          <strong className="text-[#52565b] font-semibold">
-            {DEMO_PASSWORD}
-          </strong>
-        </p>
+        {/* Quick Fill Credentials button */}
+        <div className="mt-4 flex flex-col items-center gap-1.5 w-full">
+          <button
+            type="button"
+            onClick={() => {
+              setEmail(DEMO_EMAIL);
+              setPassword(DEMO_PASSWORD);
+            }}
+            className="px-3 py-1 bg-[#f0f1f3] hover:bg-[#e4e6ea] text-[#374151] rounded-[12px] text-[11px] font-semibold transition-colors cursor-pointer border border-[#d1d4d9]"
+          >
+            ⚡ Auto-Fill Super Admin Credentials
+          </button>
+          <p className="m-0 text-[10px] text-[#8a8d92] text-center">
+            email: <strong className="text-[#374151]">{DEMO_EMAIL}</strong> · password: <strong className="text-[#374151]">{DEMO_PASSWORD}</strong>
+          </p>
+        </div>
       </div>
     </div>
   );

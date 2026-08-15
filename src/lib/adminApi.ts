@@ -1,4 +1,5 @@
 import { api } from "./apiClient";
+import { getStoredTokens } from "./auth";
 import type {
   Profile,
   Preferences,
@@ -290,7 +291,7 @@ export const adminApi = {
     const formData = new FormData();
     formData.append("file", file);
     const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
-    const token = localStorage.getItem("sizzl-token") || sessionStorage.getItem("sizzl-token");
+    const { token } = getStoredTokens();
     const response = await fetch(`${API_BASE_URL}/upload/image`, {
       method: "POST",
       headers: {

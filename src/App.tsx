@@ -23,14 +23,20 @@ import ContactSettings from "@/pages/settings/ContactSettings";
 import AuditLogs from "@/pages/settings/AuditLogs";
 import SessionExpiredModal from "@/components/common/SessionExpiredModal";
 
-import { clearStoredTokens, getStoredTokens, isJwtExpired } from "@/lib/auth";
+import {
+  clearStoredTokens,
+  getStoredTokens,
+  isJwtExpired,
+  refreshTokenApi,
+  logoutApi,
+} from "@/lib/auth";
 
 function isAuthenticated() {
-  const { token } = getStoredTokens();
-  return !!token && !isJwtExpired(token) && (
+  const { token, refreshToken } = getStoredTokens();
+  const hasAuthFlag =
     localStorage.getItem("sizzl-auth") === "1" ||
-    sessionStorage.getItem("sizzl-auth") === "1"
-  );
+    sessionStorage.getItem("sizzl-auth") === "1";
+  return !!(token || refreshToken) && hasAuthFlag;
 }
 
 export default function App() {
@@ -45,8 +51,8 @@ export default function App() {
 
   const handleLogin = () => setAuthed(true);
 
-  const handleLogout = () => {
-    clearStoredTokens();
+  const handleLogout = async () => {
+    await logoutApi();
     setAuthed(false);
   };
 
@@ -70,17 +76,28 @@ export default function App() {
     };
     window.addEventListener("sizzl:session-expired", handleExpiredEvent);
 
-    // 2. Periodic background verification every 10 seconds
-    const interval = setInterval(() => {
-      const { token } = getStoredTokens();
-      if (token && authed && isJwtExpired(token)) {
-        setSessionExpiredModal({
-          isOpen: true,
-          message:
-            "Your authentication token has expired. Please log in again to resume your administrative session.",
-        });
+    // 2. Periodic background silent token refresh & validation every 30 seconds
+    const interval = setInterval(async () => {
+      const { token, refreshToken } = getStoredTokens();
+      if (authed && token && isJwtExpired(token)) {
+        if (refreshToken) {
+          const refreshed = await refreshTokenApi();
+          if (!refreshed) {
+            setSessionExpiredModal({
+              isOpen: true,
+              message:
+                "Your authentication session has expired. Please log in again to resume your administrative session.",
+            });
+          }
+        } else {
+          setSessionExpiredModal({
+            isOpen: true,
+            message:
+              "Your authentication session has expired. Please log in again to resume your administrative session.",
+          });
+        }
       }
-    }, 10000);
+    }, 30000);
 
     return () => {
       window.removeEventListener("sizzl:session-expired", handleExpiredEvent);
