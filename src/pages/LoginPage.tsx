@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { loginApi } from "@/lib/auth";
 
@@ -17,6 +17,15 @@ export function LoginPage({ onLogin }: Props) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem("sizzl_remembered_email");
+    const rememberedCheck = localStorage.getItem("sizzl_remember_me") === "1";
+    if (rememberedEmail) {
+      setEmail(rememberedEmail);
+      setRemember(rememberedCheck);
+    }
+  }, []);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
@@ -30,6 +39,13 @@ export function LoginPage({ onLogin }: Props) {
 
     try {
       await loginApi(email.trim(), password, remember);
+      if (remember) {
+        localStorage.setItem("sizzl_remembered_email", email.trim());
+        localStorage.setItem("sizzl_remember_me", "1");
+      } else {
+        localStorage.removeItem("sizzl_remembered_email");
+        localStorage.removeItem("sizzl_remember_me");
+      }
       onLogin();
     } catch (err: any) {
       setError(err?.message || "Incorrect email or password.");

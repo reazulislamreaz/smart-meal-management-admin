@@ -35,7 +35,7 @@ export function Meals() {
   });
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
-  const pageSize = 10;
+  const pageSize = 15;
 
   const [meals, setMeals] = useState<AdminMealItem[]>([]);
   const [totalMeals, setTotalMeals] = useState(0);
