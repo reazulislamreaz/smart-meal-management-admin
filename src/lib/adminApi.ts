@@ -493,16 +493,28 @@ export const adminApi = {
     return api.delete(`/admin/contacts/${id}`);
   },
 
-  // 10. Audit Logs
+  // 10. Audit Logs & Retention Management
   getAuditLogs: async (params?: {
     page?: number;
     limit?: number;
+    search?: string;
+    action?: string;
   }): Promise<{ data: AdminAuditLogItem[]; meta: { total: number; page: number; limit: number; totalPages: number } }> => {
     const query = new URLSearchParams();
     if (params?.page) query.set("page", String(params.page));
     if (params?.limit) query.set("limit", String(params.limit));
+    if (params?.search) query.set("search", params.search);
+    if (params?.action) query.set("action", params.action);
     const qs = query.toString();
     return api.get(`/admin/audit-logs${qs ? `?${qs}` : ""}`);
+  },
+
+  cleanupAuditLogs: async (days = 30): Promise<{ success: boolean; deletedCount: number; message: string }> => {
+    return api.delete(`/admin/audit-logs/cleanup?days=${days}`);
+  },
+
+  clearAllAuditLogs: async (): Promise<{ success: boolean; deletedCount: number; message: string }> => {
+    return api.delete("/admin/audit-logs/clear-all");
   },
 
   // 11. Reports & Exports
