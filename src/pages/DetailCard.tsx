@@ -263,15 +263,40 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
           <h3 className="m-0 mb-4 text-[16px] font-bold">Subscription Buying Information</h3>
           <div className="grid grid-cols-3 gap-x-5 gap-y-6 max-[620px]:grid-cols-2 max-[420px]:grid-cols-1">
             {[
-              ["Subscription Type", displayPlan],
-              ["Buying date", "12/12/24"],
-              ["Current Period Start Date", "15 Feb 2025"],
-              ["Transaction ID", `TXN${targetId.slice(0, 4)}`],
-              ["Withdraw Amount", "$120"],
-              ["Subscription Expired", "15 Jan 2026"],
-              ["Current Plan Meal ID", "Trial"],
-              ["Card Type", "Visa/Pay"],
-              ["Status", "Approved"],
+              ["Subscription Type", apiUser?.subscriptions?.[0]?.planName || displayPlan],
+              [
+                "Buying date",
+                apiUser?.subscriptions?.[0]?.createdAt
+                  ? new Date(apiUser.subscriptions[0].createdAt).toLocaleDateString()
+                  : displayJoiningDate,
+              ],
+              [
+                "Current Period Start Date",
+                apiUser?.subscriptions?.[0]?.currentPeriodStart
+                  ? new Date(apiUser.subscriptions[0].currentPeriodStart).toLocaleDateString()
+                  : displayJoiningDate,
+              ],
+              [
+                "Transaction ID",
+                apiUser?.subscriptions?.[0]?.stripePaymentIntentId ||
+                  apiUser?.subscriptions?.[0]?.stripeSubscriptionId ||
+                  `TXN${targetId.slice(0, 6).toUpperCase()}`,
+              ],
+              [
+                "Withdraw Amount",
+                apiUser?.subscriptions?.[0]?.planName?.toLowerCase().includes("annual")
+                  ? "$59.88"
+                  : "$7.99",
+              ],
+              [
+                "Subscription Expired",
+                apiUser?.subscriptions?.[0]?.currentPeriodEnd
+                  ? new Date(apiUser.subscriptions[0].currentPeriodEnd).toLocaleDateString()
+                  : "Active (Auto-renew)",
+              ],
+              ["Current Plan Meal ID", apiUser?.subscriptions?.[0]?.planName || "Standard"],
+              ["Card Type", "Visa / Stripe"],
+              ["Status", apiUser?.subscriptions?.[0]?.status || "Approved"],
             ].map(([a, b]) => (
               <div className="flex flex-col gap-[5px] min-w-0" key={a}>
                 <span className="text-[#666a70] text-[12px]">{a}</span>
