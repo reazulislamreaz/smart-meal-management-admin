@@ -3,8 +3,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/
 export interface UserProfile {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  name: string;
   role: "SUPER_ADMIN" | "USER";
   weeklyBudget?: number;
   cuisinePreferences?: string[];
