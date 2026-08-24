@@ -11,9 +11,10 @@ export default defineConfig({
     },
   },
   preview: {
-    host: "206.162.244.11",
+    host: true,
     port: 9173,
     strictPort: true,
+    allowedHosts: true,
   },
   // server: {
   //   port: 3000, // Your desired port
