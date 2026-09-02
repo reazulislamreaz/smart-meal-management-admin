@@ -191,13 +191,17 @@ export const adminApi = {
     isBlocked?: boolean;
     dateFrom?: string;
     dateTo?: string;
-  }): Promise<{ data: AdminUserItem[]; meta: { total: number; page: number; limit: number; totalPages: number } }> => {
+  }): Promise<{
+    data: AdminUserItem[];
+    meta: { total: number; page: number; limit: number; totalPages: number };
+  }> => {
     const query = new URLSearchParams();
     if (params?.page) query.set("page", String(params.page));
     if (params?.limit) query.set("limit", String(params.limit));
     if (params?.search) query.set("search", params.search);
     if (params?.role) query.set("role", params.role);
-    if (params?.isBlocked !== undefined) query.set("isBlocked", String(params.isBlocked));
+    if (params?.isBlocked !== undefined)
+      query.set("isBlocked", String(params.isBlocked));
     if (params?.dateFrom) query.set("dateFrom", params.dateFrom);
     if (params?.dateTo) query.set("dateTo", params.dateTo);
 
@@ -210,9 +214,22 @@ export const adminApi = {
   },
 
   getUserRatio: async (): Promise<{
-    chartData: { monthly: number[]; annually: number[]; monthlyCounts: number[]; annualCounts: number[] };
+    chartData: {
+      monthly: number[];
+      annually: number[];
+      monthlyCounts: number[];
+      annualCounts: number[];
+    };
     peak: { monthIndex: number; monthName: string; count: number };
-    stats: { totalUsers: number; activeUsers: number; blockedUsers: number; subscribedUsers: number; activeRatio: number; blockedRatio: number; subscribedRatio: number };
+    stats: {
+      totalUsers: number;
+      activeUsers: number;
+      blockedUsers: number;
+      subscribedUsers: number;
+      activeRatio: number;
+      blockedRatio: number;
+      subscribedRatio: number;
+    };
   }> => {
     return api.get("/admin/users/ratio");
   },
@@ -221,7 +238,10 @@ export const adminApi = {
     return api.get<{ task: any; user: any }>("/admin/tasks/latest-user");
   },
 
-  toggleUserBlock: async (id: string, isBlocked?: boolean): Promise<{ isBlocked: boolean; message: string }> => {
+  toggleUserBlock: async (
+    id: string,
+    isBlocked?: boolean,
+  ): Promise<{ isBlocked: boolean; message: string }> => {
     return api.patch(`/admin/users/${id}/block`, { isBlocked });
   },
 
@@ -232,12 +252,16 @@ export const adminApi = {
     search?: string;
     category?: string;
     cuisine?: string;
-  }): Promise<{ data: AdminMealItem[]; meta: { total: number; page: number; limit: number; totalPages: number } }> => {
+  }): Promise<{
+    data: AdminMealItem[];
+    meta: { total: number; page: number; limit: number; totalPages: number };
+  }> => {
     const query = new URLSearchParams();
     if (params?.page) query.set("page", String(params.page));
     if (params?.limit) query.set("limit", String(params.limit));
     if (params?.search) query.set("search", params.search);
-    if (params?.category && params.category !== "All") query.set("category", params.category);
+    if (params?.category && params.category !== "All")
+      query.set("category", params.category);
     if (params?.cuisine) query.set("cuisine", params.cuisine);
 
     const qs = query.toString();
@@ -283,14 +307,17 @@ export const adminApi = {
     });
   },
 
-  deleteMeal: async (id: string): Promise<{ success: boolean; message: string }> => {
+  deleteMeal: async (
+    id: string,
+  ): Promise<{ success: boolean; message: string }> => {
     return api.delete(`/admin/meals/${id}`);
   },
 
   uploadImage: async (file: File): Promise<{ url: string; key: string }> => {
     const formData = new FormData();
     formData.append("file", file);
-    const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+    const API_BASE_URL =
+      import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
     const { token } = getStoredTokens();
     const response = await fetch(`${API_BASE_URL}/upload/image`, {
       method: "POST",
@@ -308,15 +335,23 @@ export const adminApi = {
   },
 
   // 4. Meal Options (Taxonomy)
-  getMealOptions: async (): Promise<{ diets: string[]; cuisines: string[] }> => {
-    return api.get<{ diets: string[]; cuisines: string[] }>("/admin/meal-options");
+  getMealOptions: async (): Promise<{
+    diets: string[];
+    cuisines: string[];
+  }> => {
+    return api.get<{ diets: string[]; cuisines: string[] }>(
+      "/admin/meal-options",
+    );
   },
 
   addMealOption: async (type: "diet" | "cuisine", value: string) => {
-    return api.post<{ diets: string[]; cuisines: string[] }>("/admin/meal-options", {
-      type,
-      value,
-    });
+    return api.post<{ diets: string[]; cuisines: string[] }>(
+      "/admin/meal-options",
+      {
+        type,
+        value,
+      },
+    );
   },
 
   removeMealOption: async (type: "diet" | "cuisine", value: string) => {
@@ -334,7 +369,9 @@ export const adminApi = {
     return api.get<SubscriptionPlan>(`/admin/subscription-plans/${id}`);
   },
 
-  createSubscriptionPlan: async (plan: Omit<SubscriptionPlan, "id">): Promise<SubscriptionPlan> => {
+  createSubscriptionPlan: async (
+    plan: Omit<SubscriptionPlan, "id">,
+  ): Promise<SubscriptionPlan> => {
     return api.post<SubscriptionPlan>("/admin/subscription-plans", {
       name: plan.name,
       description: plan.description,
@@ -344,17 +381,26 @@ export const adminApi = {
     });
   },
 
-  updateSubscriptionPlan: async (id: string, plan: Partial<SubscriptionPlan>): Promise<SubscriptionPlan> => {
+  updateSubscriptionPlan: async (
+    id: string,
+    plan: Partial<SubscriptionPlan>,
+  ): Promise<SubscriptionPlan> => {
     return api.put<SubscriptionPlan>(`/admin/subscription-plans/${id}`, {
       name: plan.name,
       description: plan.description,
       price: plan.price ? parseFloat(plan.price) : undefined,
-      interval: plan.duration ? (plan.duration === "annual" ? "yearly" : "monthly") : undefined,
+      interval: plan.duration
+        ? plan.duration === "annual"
+          ? "yearly"
+          : "monthly"
+        : undefined,
       features: plan.features,
     });
   },
 
-  deleteSubscriptionPlan: async (id: string): Promise<{ success: boolean; message: string }> => {
+  deleteSubscriptionPlan: async (
+    id: string,
+  ): Promise<{ success: boolean; message: string }> => {
     return api.delete(`/admin/subscription-plans/${id}`);
   },
 
@@ -380,12 +426,16 @@ export const adminApi = {
     search?: string;
     subscriptionType?: string;
     sortOrder?: "asc" | "desc";
-  }): Promise<{ data: EarningsSubscriberItem[]; meta: { total: number; page: number; limit: number; totalPages: number } }> => {
+  }): Promise<{
+    data: EarningsSubscriberItem[];
+    meta: { total: number; page: number; limit: number; totalPages: number };
+  }> => {
     const query = new URLSearchParams();
     if (params?.page) query.set("page", String(params.page));
     if (params?.limit) query.set("limit", String(params.limit));
     if (params?.search) query.set("search", params.search);
-    if (params?.subscriptionType) query.set("subscriptionType", params.subscriptionType);
+    if (params?.subscriptionType)
+      query.set("subscriptionType", params.subscriptionType);
     if (params?.sortOrder) query.set("sortOrder", params.sortOrder);
 
     const qs = query.toString();
@@ -401,8 +451,14 @@ export const adminApi = {
     return api.put<Profile>("/admin/settings/profile", profile);
   },
 
-  changePassword: async (currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
-    return api.put("/admin/settings/password", { currentPassword, newPassword });
+  changePassword: async (
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ success: boolean; message: string }> => {
+    return api.put("/admin/settings/password", {
+      currentPassword,
+      newPassword,
+    });
   },
 
   updateAppConfig: async (config: {
@@ -415,19 +471,29 @@ export const adminApi = {
     return api.put<FullAdminSettings>("/admin/settings/app-config", config);
   },
 
-  updateContactSettings: async (contact: Partial<ContactDetails>): Promise<FullAdminSettings> => {
+  updateContactSettings: async (
+    contact: Partial<ContactDetails>,
+  ): Promise<FullAdminSettings> => {
     return api.put<FullAdminSettings>("/admin/settings/contact", contact);
   },
 
-  updateContentPage: async (slug: "privacy-policy" | "about-us", title: string, content: string) => {
+  updateContentPage: async (
+    slug: "privacy-policy" | "about-us",
+    title: string,
+    content: string,
+  ) => {
     return api.put(`/admin/content/${slug}`, { title, content });
   },
 
   // 8. Coupons Management
-  getCoupons: async (params?: { search?: string; isActive?: boolean }): Promise<AdminCouponItem[]> => {
+  getCoupons: async (params?: {
+    search?: string;
+    isActive?: boolean;
+  }): Promise<AdminCouponItem[]> => {
     const query = new URLSearchParams();
     if (params?.search) query.set("search", params.search);
-    if (params?.isActive !== undefined) query.set("isActive", String(params.isActive));
+    if (params?.isActive !== undefined)
+      query.set("isActive", String(params.isActive));
     const qs = query.toString();
     return api.get(`/admin/coupons${qs ? `?${qs}` : ""}`);
   },
@@ -463,7 +529,9 @@ export const adminApi = {
     return api.patch(`/admin/coupons/${id}/status`);
   },
 
-  deleteCoupon: async (id: string): Promise<{ success: boolean; message: string }> => {
+  deleteCoupon: async (
+    id: string,
+  ): Promise<{ success: boolean; message: string }> => {
     return api.delete(`/admin/coupons/${id}`);
   },
 
@@ -472,7 +540,10 @@ export const adminApi = {
     status?: string;
     page?: number;
     limit?: number;
-  }): Promise<{ data: AdminContactMessage[]; meta: { total: number; page: number; limit: number; totalPages: number } }> => {
+  }): Promise<{
+    data: AdminContactMessage[];
+    meta: { total: number; page: number; limit: number; totalPages: number };
+  }> => {
     const query = new URLSearchParams();
     if (params?.status) query.set("status", params.status);
     if (params?.page) query.set("page", String(params.page));
@@ -485,11 +556,16 @@ export const adminApi = {
     return api.get(`/admin/contacts/${id}`);
   },
 
-  updateContactStatus: async (id: string, status: "UNREAD" | "READ" | "RESOLVED"): Promise<AdminContactMessage> => {
+  updateContactStatus: async (
+    id: string,
+    status: "UNREAD" | "READ" | "RESOLVED",
+  ): Promise<AdminContactMessage> => {
     return api.patch(`/admin/contacts/${id}/status`, { status });
   },
 
-  deleteContactMessage: async (id: string): Promise<{ success: boolean; message: string }> => {
+  deleteContactMessage: async (
+    id: string,
+  ): Promise<{ success: boolean; message: string }> => {
     return api.delete(`/admin/contacts/${id}`);
   },
 
@@ -499,7 +575,10 @@ export const adminApi = {
     limit?: number;
     search?: string;
     action?: string;
-  }): Promise<{ data: AdminAuditLogItem[]; meta: { total: number; page: number; limit: number; totalPages: number } }> => {
+  }): Promise<{
+    data: AdminAuditLogItem[];
+    meta: { total: number; page: number; limit: number; totalPages: number };
+  }> => {
     const query = new URLSearchParams();
     if (params?.page) query.set("page", String(params.page));
     if (params?.limit) query.set("limit", String(params.limit));
@@ -509,18 +588,27 @@ export const adminApi = {
     return api.get(`/admin/audit-logs${qs ? `?${qs}` : ""}`);
   },
 
-  cleanupAuditLogs: async (days = 30): Promise<{ success: boolean; deletedCount: number; message: string }> => {
+  cleanupAuditLogs: async (
+    days = 30,
+  ): Promise<{ success: boolean; deletedCount: number; message: string }> => {
     return api.delete(`/admin/audit-logs/cleanup?days=${days}`);
   },
 
-  clearAllAuditLogs: async (): Promise<{ success: boolean; deletedCount: number; message: string }> => {
+  clearAllAuditLogs: async (): Promise<{
+    success: boolean;
+    deletedCount: number;
+    message: string;
+  }> => {
     return api.delete("/admin/audit-logs/clear-all");
   },
 
   // 11. Reports & Exports
   exportUsersExcel: async (): Promise<Blob> => {
-    const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
-    const token = localStorage.getItem("sizzl-token") || sessionStorage.getItem("sizzl-token");
+    const API_BASE_URL =
+      import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+    const token =
+      localStorage.getItem("sizzl-token") ||
+      sessionStorage.getItem("sizzl-token");
     const response = await fetch(`${API_BASE_URL}/exports/users/excel`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -531,8 +619,11 @@ export const adminApi = {
   },
 
   exportUsersPdf: async (): Promise<Blob> => {
-    const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
-    const token = localStorage.getItem("sizzl-token") || sessionStorage.getItem("sizzl-token");
+    const API_BASE_URL =
+      import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+    const token =
+      localStorage.getItem("sizzl-token") ||
+      sessionStorage.getItem("sizzl-token");
     const response = await fetch(`${API_BASE_URL}/exports/users/pdf`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -544,4 +635,3 @@ export const adminApi = {
 };
 
 export default adminApi;
-

@@ -28,7 +28,19 @@ const INGREDIENT_DEPARTMENTS = [
   "Canned Goods",
 ];
 
-const COMMON_UNITS = ["g", "kg", "ml", "L", "tbsp", "tsp", "cups", "pcs", "oz", "lbs", "pinch"];
+const COMMON_UNITS = [
+  "g",
+  "kg",
+  "ml",
+  "L",
+  "tbsp",
+  "tsp",
+  "cups",
+  "pcs",
+  "oz",
+  "lbs",
+  "pinch",
+];
 
 export function MealForm({
   draft,
@@ -118,7 +130,9 @@ export function MealForm({
         <div className="flex items-center gap-2">
           <ChefHat className="w-5 h-5 text-[#17181a]" />
           <h3 className="m-0 text-[15px] font-bold text-[#17181a]">
-            {editing ? "Edit Master Recipe & Intelligence" : "Create Master Recipe"}
+            {editing
+              ? "Edit Master Recipe & Intelligence"
+              : "Create Master Recipe"}
           </h3>
         </div>
         <button
@@ -292,7 +306,10 @@ export function MealForm({
                 onChange={(e) => setIngName(e.target.value)}
                 placeholder="Ingredient name (e.g. Eggs)"
                 className="h-8 px-2 text-[11px] border border-[#d1d4d9] rounded-[4px] outline-none focus:border-[#17181a]"
-                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddIngredient())}
+                onKeyDown={(e) =>
+                  e.key === "Enter" &&
+                  (e.preventDefault(), handleAddIngredient())
+                }
               />
               <input
                 type="number"
@@ -385,7 +402,10 @@ export function MealForm({
                 onChange={(e) => setStepDraft(e.target.value)}
                 placeholder="e.g. Heat olive oil in skillet over medium heat..."
                 className="flex-1 h-8 px-2.5 text-[11px] border border-[#d1d4d9] rounded-[4px] outline-none focus:border-[#17181a]"
-                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddInstruction())}
+                onKeyDown={(e) =>
+                  e.key === "Enter" &&
+                  (e.preventDefault(), handleAddInstruction())
+                }
               />
               <button
                 type="button"
@@ -410,7 +430,9 @@ export function MealForm({
                         <span className="font-bold text-[#17181a] text-[10px] min-w-[14px]">
                           {idx + 1}.
                         </span>
-                        <span className="text-[#374151] leading-tight">{step}</span>
+                        <span className="text-[#374151] leading-tight">
+                          {step}
+                        </span>
                       </div>
                       <button
                         type="button"

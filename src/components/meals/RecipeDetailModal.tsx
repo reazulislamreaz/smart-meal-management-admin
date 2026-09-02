@@ -17,7 +17,9 @@ export function RecipeDetailModal({
   if (!isOpen || !meal) return null;
 
   const dietaryTags = Array.isArray(meal.dietaryTags) ? meal.dietaryTags : [];
-  const instructions = Array.isArray(meal.instructions) ? meal.instructions : [];
+  const instructions = Array.isArray(meal.instructions)
+    ? meal.instructions
+    : [];
   const ingredients = Array.isArray(meal.ingredients) ? meal.ingredients : [];
 
   return (
@@ -88,7 +90,9 @@ export function RecipeDetailModal({
               </span>
               <strong className="text-[13px] text-[#059669] flex items-center justify-center gap-0.5 mt-0.5">
                 {meal.price}
-                <span className="text-[10px] font-normal text-[#6b7280]">/srv</span>
+                <span className="text-[10px] font-normal text-[#6b7280]">
+                  /srv
+                </span>
               </strong>
             </div>
 
@@ -167,9 +171,13 @@ export function RecipeDetailModal({
                       key={idx}
                       className="grid grid-cols-[2fr_1fr_1fr] px-3 py-1.5 text-[11px] items-center"
                     >
-                      <strong className="text-[#111827]">{ing.name || ing}</strong>
+                      <strong className="text-[#111827]">
+                        {ing.name || ing}
+                      </strong>
                       <span className="text-[#4b5563]">
-                        {ing.quantity ? `${ing.quantity} ${ing.unit || ""}` : "To taste"}
+                        {ing.quantity
+                          ? `${ing.quantity} ${ing.unit || ""}`
+                          : "To taste"}
                       </span>
                       <span className="text-[#6b7280] text-[10px]">
                         {ing.category || "Pantry Staples"}

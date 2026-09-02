@@ -18,7 +18,8 @@ export function Meals() {
   const [category, setCategory] = useState("All");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMealId, setEditingMealId] = useState<string | null>(null);
-  const [selectedMealForDetail, setSelectedMealForDetail] = useState<AdminMealItem | null>(null);
+  const [selectedMealForDetail, setSelectedMealForDetail] =
+    useState<AdminMealItem | null>(null);
 
   const [draft, setDraft] = useState<MealDraft>({
     name: "",
@@ -70,7 +71,11 @@ export function Meals() {
         category: category !== "All" ? category : undefined,
       });
 
-      const list = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+      const list = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.data)
+          ? res.data
+          : [];
       const total = res?.meta?.total ?? list.length;
       setMeals(list);
       setTotalMeals(total);
@@ -260,14 +265,24 @@ export function Meals() {
           <Link
             to="/meal-options"
             className="dark-button inline-flex items-center gap-1.5"
-            style={{ height: "34px", fontSize: "11px", padding: "0 14px", borderRadius: "6px" }}
+            style={{
+              height: "34px",
+              fontSize: "11px",
+              padding: "0 14px",
+              borderRadius: "6px",
+            }}
           >
             Manage Taxonomies
           </Link>
           <button
             type="button"
             className="dark-button inline-flex items-center gap-1.5 cursor-pointer"
-            style={{ height: "34px", fontSize: "11px", padding: "0 14px", borderRadius: "6px" }}
+            style={{
+              height: "34px",
+              fontSize: "11px",
+              padding: "0 14px",
+              borderRadius: "6px",
+            }}
             onClick={handleCreateNew}
           >
             + Add Recipe
@@ -329,7 +344,9 @@ export function Meals() {
                         </div>
                       )}
                       <div>
-                        <strong className="block text-[#111827] text-[12px]">{m.name}</strong>
+                        <strong className="block text-[#111827] text-[12px]">
+                          {m.name}
+                        </strong>
                         {m.dietaryTags && m.dietaryTags.length > 0 && (
                           <div className="flex gap-1 mt-0.5">
                             {m.dietaryTags.slice(0, 2).map((tag) => (
@@ -363,7 +380,9 @@ export function Meals() {
                     <strong className="text-[#059669]">{m.price}</strong>
                   </td>
                   <td>
-                    <span className={`status ${m.status.toLowerCase()}`}>{m.status}</span>
+                    <span className={`status ${m.status.toLowerCase()}`}>
+                      {m.status}
+                    </span>
                   </td>
                   <td>
                     <span className="text-[#6b7280]">{m.uses}</span>
