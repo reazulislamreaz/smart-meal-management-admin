@@ -34,7 +34,10 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
           }
         })
         .catch((err) => {
-          console.warn("Could not load user details from backend:", err.message);
+          console.warn(
+            "Could not load user details from backend:",
+            err.message,
+          );
         });
     }
     return () => {
@@ -84,7 +87,8 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
   const displayAddress = apiUser?.address || fallbackUser[4];
   const displayEmail = apiUser?.email || fallbackUser[2];
   const displayPhone = apiUser?.phoneNumber || fallbackUser[3];
-  const displayJoiningDate = apiUser?.joiningDate || (fallbackUser[5] ?? "").split("\n")[0];
+  const displayJoiningDate =
+    apiUser?.joiningDate || (fallbackUser[5] ?? "").split("\n")[0];
   const displayPlan = apiUser?.currentPlan || "Annual";
   const displayAvatar = apiUser?.avatar || avatars[avatarIdx];
   const activeMeals = apiUser?.activeMeals ?? 10;
@@ -102,7 +106,12 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
       {/* ── Identity card ───────────────────────────────────────────── */}
       <div
         className="bg-white border border-[#e5e7ea] rounded-[7px] flex justify-between items-center px-[18px] py-[15px]"
-        style={{ flexDirection: "column", alignItems: "center", gap: "14px", padding: "28px 18px 22px" }}
+        style={{
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "14px",
+          padding: "28px 18px 22px",
+        }}
       >
         {/* Avatar */}
         <div style={{ position: "relative" }}>
@@ -137,7 +146,9 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
 
         {/* Name + badge */}
         <div style={{ textAlign: "center" }}>
-          <strong style={{ fontSize: "16px", display: "block", marginBottom: "8px" }}>
+          <strong
+            style={{ fontSize: "16px", display: "block", marginBottom: "8px" }}
+          >
             {displayName}
           </strong>
           <span
@@ -177,7 +188,10 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
       </div>
 
       {/* ── Stats row ───────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-3 my-[14px] max-[420px]:grid-cols-1" style={{ marginTop: "14px" }}>
+      <div
+        className="grid grid-cols-2 gap-3 my-[14px] max-[420px]:grid-cols-1"
+        style={{ marginTop: "14px" }}
+      >
         <div className="h-[75px] rounded-[6px] bg-white border border-[#e5e7ea] p-[13px] flex flex-col gap-[7px]">
           <span className="text-[#666a70] text-[12px]">Active Meals</span>
           <strong className="text-[20px]">{activeMeals}</strong>
@@ -190,32 +204,47 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
 
       {/* ── User Information ────────────────────────────────────────── */}
       {!earnings ? (
-        <section className="bg-white border border-[#e5e7ea] rounded-[7px] px-[18px] py-[15px]" style={{ marginTop: "14px" }}>
+        <section
+          className="bg-white border border-[#e5e7ea] rounded-[7px] px-[18px] py-[15px]"
+          style={{ marginTop: "14px" }}
+        >
           <h3 className="m-0 mb-4 text-[16px] font-bold">User Information</h3>
           <div className="grid grid-cols-4 gap-5 max-[1100px]:grid-cols-2 max-[420px]:grid-cols-1">
             <div className="flex flex-col gap-[5px] min-w-0">
               <span className="text-[#666a70] text-[12px]">Name</span>
-              <strong className="text-[12px] wrap-anywhere">{displayName}</strong>
+              <strong className="text-[12px] wrap-anywhere">
+                {displayName}
+              </strong>
             </div>
             <div className="flex flex-col gap-[5px] min-w-0">
               <span className="text-[#666a70] text-[12px]">Address</span>
-              <strong className="text-[12px] wrap-anywhere">{displayAddress}</strong>
+              <strong className="text-[12px] wrap-anywhere">
+                {displayAddress}
+              </strong>
             </div>
             <div className="flex flex-col gap-[5px] min-w-0">
               <span className="text-[#666a70] text-[12px]">Email</span>
-              <strong className="text-[12px] wrap-anywhere">{displayEmail}</strong>
+              <strong className="text-[12px] wrap-anywhere">
+                {displayEmail}
+              </strong>
             </div>
             <div className="flex flex-col gap-[5px] min-w-0">
               <span className="text-[#666a70] text-[12px]">Phone number</span>
-              <strong className="text-[12px] wrap-anywhere">{displayPhone}</strong>
+              <strong className="text-[12px] wrap-anywhere">
+                {displayPhone}
+              </strong>
             </div>
             <div className="flex flex-col gap-[5px] min-w-0">
               <span className="text-[#666a70] text-[12px]">Joining Date</span>
-              <strong className="text-[12px] wrap-anywhere">{displayJoiningDate}</strong>
+              <strong className="text-[12px] wrap-anywhere">
+                {displayJoiningDate}
+              </strong>
             </div>
             <div className="flex flex-col gap-[5px] min-w-0">
               <span className="text-[#666a70] text-[12px]">Current plan</span>
-              <strong className="text-[12px] wrap-anywhere approved">{displayPlan}</strong>
+              <strong className="text-[12px] wrap-anywhere approved">
+                {displayPlan}
+              </strong>
             </div>
           </div>
 
@@ -259,21 +288,33 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
           )}
         </section>
       ) : (
-        <section className="bg-white border border-[#e5e7ea] rounded-[7px] px-[18px] py-[15px]" style={{ marginTop: "14px" }}>
-          <h3 className="m-0 mb-4 text-[16px] font-bold">Subscription Buying Information</h3>
+        <section
+          className="bg-white border border-[#e5e7ea] rounded-[7px] px-[18px] py-[15px]"
+          style={{ marginTop: "14px" }}
+        >
+          <h3 className="m-0 mb-4 text-[16px] font-bold">
+            Subscription Buying Information
+          </h3>
           <div className="grid grid-cols-3 gap-x-5 gap-y-6 max-[620px]:grid-cols-2 max-[420px]:grid-cols-1">
             {[
-              ["Subscription Type", apiUser?.subscriptions?.[0]?.planName || displayPlan],
+              [
+                "Subscription Type",
+                apiUser?.subscriptions?.[0]?.planName || displayPlan,
+              ],
               [
                 "Buying date",
                 apiUser?.subscriptions?.[0]?.createdAt
-                  ? new Date(apiUser.subscriptions[0].createdAt).toLocaleDateString()
+                  ? new Date(
+                      apiUser.subscriptions[0].createdAt,
+                    ).toLocaleDateString()
                   : displayJoiningDate,
               ],
               [
                 "Current Period Start Date",
                 apiUser?.subscriptions?.[0]?.currentPeriodStart
-                  ? new Date(apiUser.subscriptions[0].currentPeriodStart).toLocaleDateString()
+                  ? new Date(
+                      apiUser.subscriptions[0].currentPeriodStart,
+                    ).toLocaleDateString()
                   : displayJoiningDate,
               ],
               [
@@ -284,23 +325,34 @@ export function DetailCard({ earnings = false }: { earnings?: boolean }) {
               ],
               [
                 "Withdraw Amount",
-                apiUser?.subscriptions?.[0]?.planName?.toLowerCase().includes("annual")
+                apiUser?.subscriptions?.[0]?.planName
+                  ?.toLowerCase()
+                  .includes("annual")
                   ? "$59.88"
                   : "$7.99",
               ],
               [
                 "Subscription Expired",
                 apiUser?.subscriptions?.[0]?.currentPeriodEnd
-                  ? new Date(apiUser.subscriptions[0].currentPeriodEnd).toLocaleDateString()
+                  ? new Date(
+                      apiUser.subscriptions[0].currentPeriodEnd,
+                    ).toLocaleDateString()
                   : "Active (Auto-renew)",
               ],
-              ["Current Plan Meal ID", apiUser?.subscriptions?.[0]?.planName || "Standard"],
+              [
+                "Current Plan Meal ID",
+                apiUser?.subscriptions?.[0]?.planName || "Standard",
+              ],
               ["Card Type", "Visa / Stripe"],
               ["Status", apiUser?.subscriptions?.[0]?.status || "Approved"],
             ].map(([a, b]) => (
               <div className="flex flex-col gap-[5px] min-w-0" key={a}>
                 <span className="text-[#666a70] text-[12px]">{a}</span>
-                <strong className={`text-[12px] wrap-anywhere${a === "Status" ? " approved" : ""}`}>{b}</strong>
+                <strong
+                  className={`text-[12px] wrap-anywhere${a === "Status" ? " approved" : ""}`}
+                >
+                  {b}
+                </strong>
               </div>
             ))}
           </div>

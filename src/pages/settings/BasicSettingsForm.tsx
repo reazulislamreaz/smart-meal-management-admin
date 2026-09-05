@@ -9,6 +9,7 @@ import {
   Eye,
   EyeOff,
   Camera,
+  Globe,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAppData } from "@/context/AppDataContext";
@@ -16,11 +17,7 @@ import { adminApi } from "@/lib/adminApi";
 import SettingsLayout from "@/components/settings/SettingsLayout";
 import UserAvatar from "@/components/common/UserAvatar";
 
-export function BasicSettingsForm({
-  type,
-}: {
-  type: "profile" | "password";
-}) {
+export function BasicSettingsForm({ type }: { type: "profile" | "password" }) {
   const navigate = useNavigate();
   const { profile, setProfile } = useAppData();
   const [profileDraft, setProfileDraft] = useState(profile);
@@ -49,12 +46,26 @@ export function BasicSettingsForm({
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
-        setProfileDraft((current) => ({ ...current, avatar: reader.result as string }));
+        setProfileDraft((current) => ({
+          ...current,
+          avatar: reader.result as string,
+        }));
         toast.success("Avatar preview loaded.");
       }
     };
     reader.readAsDataURL(file);
     event.target.value = "";
+  };
+
+  const handleCountryChange = (countryValue: string) => {
+    const isUS = countryValue === "United States" || countryValue === "US";
+    const country = isUS ? "United States" : "United Kingdom";
+    const currency = isUS ? "USD" : "GBP";
+    setProfileDraft((current) => ({
+      ...current,
+      country,
+      currency,
+    }));
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -80,7 +91,10 @@ export function BasicSettingsForm({
         return;
       }
       try {
-        await adminApi.changePassword(passwords.current || "AdminPassword123!", passwords.next);
+        await adminApi.changePassword(
+          passwords.current || "AdminPassword123!",
+          passwords.next,
+        );
         toast.success("Password updated successfully.");
         navigate("/settings");
       } catch (e: any) {
@@ -276,6 +290,46 @@ export function BasicSettingsForm({
                   required
                 />
               </div>
+            </label>
+
+            <label style={{ gap: "4px" }}>
+              Country & Currency
+              <div style={wrapperStyle}>
+                <Globe size={15} style={iconStyle} />
+                <select
+                  style={{
+                    ...inputStyle,
+                    paddingRight: "12px",
+                    background: "#fff",
+                    cursor: "pointer",
+                  }}
+                  value={
+                    profileDraft.country === "United States" ||
+                    profileDraft.country === "US"
+                      ? "United States"
+                      : "United Kingdom"
+                  }
+                  onChange={(event) => handleCountryChange(event.target.value)}
+                >
+                  <option value="United States">
+                    🇺🇸 United States — USD ($)
+                  </option>
+                  <option value="United Kingdom">
+                    🇬🇧 United Kingdom — GBP (£)
+                  </option>
+                </select>
+              </div>
+              <span
+                style={{ fontSize: "11px", color: "#6b7280", marginTop: "2px" }}
+              >
+                Active Currency:{" "}
+                <strong style={{ color: "#111827" }}>
+                  {profileDraft.currency ||
+                    (profileDraft.country === "United States"
+                      ? "USD ($)"
+                      : "GBP (£)")}
+                </strong>
+              </span>
             </label>
 
             <label style={{ gap: "4px" }}>

@@ -158,6 +158,37 @@ export interface AdminAuditLogItem {
   } | null;
 }
 
+export interface PantryItemModel {
+  id: string;
+  userId: string;
+  ingredientName: string;
+  category: string;
+  quantity: number;
+  unit: string;
+  isLowStock: boolean;
+  expiryDate?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreatePantryItemInput {
+  ingredientName: string;
+  category?: string;
+  quantity?: number;
+  unit?: string;
+  isLowStock?: boolean;
+  expiryDate?: string | null;
+}
+
+export interface UpdatePantryItemInput {
+  ingredientName?: string;
+  category?: string;
+  quantity?: number;
+  unit?: string;
+  isLowStock?: boolean;
+  expiryDate?: string | null;
+}
+
 export interface FullAdminSettings {
   profile: Profile;
   preferences: Preferences;
@@ -631,6 +662,53 @@ export const adminApi = {
     });
     if (!response.ok) throw new Error("Failed to export PDF report");
     return response.blob();
+  },
+
+  // 12. Pantry Inventory
+  getPantryItems: async (params?: {
+    search?: string;
+    category?: string;
+    isLowStock?: boolean;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    data: PantryItemModel[];
+    meta: { total: number; page: number; limit: number; totalPages: number };
+  }> => {
+    const query = new URLSearchParams();
+    if (params?.search) query.set("search", params.search);
+    if (params?.category) query.set("category", params.category);
+    if (params?.isLowStock !== undefined)
+      query.set("isLowStock", String(params.isLowStock));
+    if (params?.page) query.set("page", String(params.page));
+    if (params?.limit) query.set("limit", String(params.limit));
+    const qs = query.toString();
+    const res = await api.get(`/pantry${qs ? `?${qs}` : ""}`);
+    return (res as any)?.data || res;
+  },
+
+  getPantryItem: async (id: string): Promise<PantryItemModel> => {
+    const res = await api.get(`/pantry/${id}`);
+    return (res as any)?.data || res;
+  },
+
+  addPantryItem: async (
+    dto: CreatePantryItemInput,
+  ): Promise<PantryItemModel> => {
+    const res = await api.post("/pantry", dto);
+    return (res as any)?.data || res;
+  },
+
+  updatePantryItem: async (
+    id: string,
+    dto: UpdatePantryItemInput,
+  ): Promise<PantryItemModel> => {
+    const res = await api.patch(`/pantry/${id}`, dto);
+    return (res as any)?.data || res;
+  },
+
+  deletePantryItem: async (id: string): Promise<{ success: boolean }> => {
+    return api.delete(`/pantry/${id}`);
   },
 };
 

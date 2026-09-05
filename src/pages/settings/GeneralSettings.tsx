@@ -18,7 +18,9 @@ export function GeneralSettings() {
           />
           <div className="flex flex-col gap-1">
             <strong style={{ fontSize: "14px" }}>{profile.name}</strong>
-            <span style={{ color: "#777", fontSize: "11px" }}>{profile.role}</span>
+            <span style={{ color: "#777", fontSize: "11px" }}>
+              {profile.role}
+            </span>
           </div>
         </div>
         <Link
@@ -29,7 +31,10 @@ export function GeneralSettings() {
           <Pencil size={11} /> Edit Profile
         </Link>
       </section>
-      <section className="bg-white border border-[#e5e7ea] rounded-[7px]" style={{ padding: "20px" }}>
+      <section
+        className="bg-white border border-[#e5e7ea] rounded-[7px]"
+        style={{ padding: "20px" }}
+      >
         <h3 style={{ margin: "0 0 20px", fontSize: "14px", fontWeight: 600 }}>
           Personal Information
         </h3>

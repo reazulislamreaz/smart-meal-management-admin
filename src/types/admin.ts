@@ -8,6 +8,8 @@ export type Profile = {
   role: string;
   memberSince: string;
   avatar: string;
+  country?: string;
+  currency?: string;
 };
 
 export type Preferences = {

@@ -24,7 +24,10 @@ export function Dashboard() {
         }
       })
       .catch((err) => {
-        console.warn("Could not load remote dashboard stats, using defaults:", err.message);
+        console.warn(
+          "Could not load remote dashboard stats, using defaults:",
+          err.message,
+        );
       });
 
     return () => {
@@ -32,23 +35,34 @@ export function Dashboard() {
     };
   }, []);
 
-  const totalUsers = stats?.miniStats?.totalUsers?.value || (stats ? "0" : "42");
-  const activeTotal = stats?.miniStats?.activeTotal?.value || (stats ? "0" : "33");
+  const totalUsers =
+    stats?.miniStats?.totalUsers?.value || (stats ? "0" : "42");
+  const activeTotal =
+    stats?.miniStats?.activeTotal?.value || (stats ? "0" : "33");
   const meed = stats?.miniStats?.meed?.value || (stats ? "$0" : "$990");
-  const mealPayment = stats?.miniStats?.mealPayment?.value || (stats ? "0" : "24");
+  const mealPayment =
+    stats?.miniStats?.mealPayment?.value || (stats ? "0" : "24");
 
   return (
     <>
       <div className="grid grid-cols-2 gap-4 min-[1600px]:gap-5 max-[1100px]:grid-cols-1">
         <div className="grid grid-cols-2 gap-[14px] min-[1600px]:gap-4 max-[620px]:grid-cols-1">
-          <MiniStat icon={<UsersRound />} value={totalUsers} label="Total Users" />
-          <MiniStat icon={<FileText />} value={activeTotal} label="Active Total" />
           <MiniStat
-            icon={<CircleDollarSign />}
-            value={meed}
-            label="MEED"
+            icon={<UsersRound />}
+            value={totalUsers}
+            label="Total Users"
           />
-          <MiniStat icon={<CreditCard />} value={mealPayment} label="Meal/Payment" />
+          <MiniStat
+            icon={<FileText />}
+            value={activeTotal}
+            label="Active Total"
+          />
+          <MiniStat icon={<CircleDollarSign />} value={meed} label="MEED" />
+          <MiniStat
+            icon={<CreditCard />}
+            value={mealPayment}
+            label="Meal/Payment"
+          />
         </div>
         <IncomeRing
           percentage={stats?.incomeRing?.percentage}
